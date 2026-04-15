@@ -3,6 +3,7 @@ import "dotenv/config";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import userRouter from "./routes/UserRoute.js";
+import jobRouter from "./routes/JobRoute.js";
 
 // 1. Khởi tạo App
 const app = express();
@@ -38,6 +39,7 @@ app.use(express.json());
 
 // 4. Các Routes API
 app.use("/api/user", userRouter);
+app.use("/api/jobs", jobRouter);
 
 // Route kiểm tra mặc định
 app.get("/", (req, res) => {
