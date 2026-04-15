@@ -10,16 +10,23 @@ const JobLogin = ({ setShowLogin }) => {
     const [password, setPassword] = useState('')
     const [phone, setPhone] = useState('')
 
-    const { backendUrl, setToken } = useContext(AppContext)
+    const { backendUrl, setToken, setRole, setUserData } = useContext(AppContext)
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         try {
             if (state === "Đăng ký") {
                 const { data } = await axios.post(backendUrl + '/api/user/register', { name, email, password, phone })
+                
                 if (data.success) {
+                    // Cập nhật động từ dữ liệu Backend trả về
                     setToken(data.token)
+                    setRole(data.role) // Thay 'user' thành data.role
+                    setUserData(data.user)
+
                     localStorage.setItem('token', data.token)
+                    localStorage.setItem('role', data.role) // Thay 'user' thành data.role
+
                     setShowLogin(false)
                     toast.success("Đăng ký thành công!")
                 } else {
@@ -27,9 +34,16 @@ const JobLogin = ({ setShowLogin }) => {
                 }
             } else {
                 const { data } = await axios.post(backendUrl + '/api/user/login', { email, password })
+                
                 if (data.success) {
+                    // QUAN TRỌNG: Lấy role trực tiếp từ Backend (User/Admin)
                     setToken(data.token)
+                    setRole(data.role) // Thay 'user' thành data.role
+                    setUserData(data.user)
+
                     localStorage.setItem('token', data.token)
+                    localStorage.setItem('role', data.role) // Thay 'user' thành data.role
+
                     setShowLogin(false)
                     toast.success("Chào mừng bạn quay lại!")
                 } else {
@@ -77,22 +91,21 @@ const JobLogin = ({ setShowLogin }) => {
                     )}
                 </div>
                 
-                <button className="w-full bg-blue-600 text-white py-2.5 rounded-full mt-6 hover:bg-blue-700 font-medium transition-all">
+                <button className="w-full bg-blue-600 text-white py-2.5 rounded-full mt-6 hover:bg-blue-700 font-medium transition-all active:scale-95 shadow-md">
                     {state === 'Đăng nhập' ? 'Đăng nhập' : 'Tạo tài khoản'}
                 </button>
 
                 <p className="mt-5 text-center text-sm text-gray-600">
                     {state === 'Đăng nhập' 
-                        ? <>Chưa có tài khoản? <span className="text-blue-600 cursor-pointer font-bold" onClick={() => setState('Đăng ký')}>Đăng ký</span></>
-                        : <>Đã có tài khoản? <span className="text-blue-600 cursor-pointer font-bold" onClick={() => setState('Đăng nhập')}>Đăng nhập</span></>
+                        ? <>Chưa có tài khoản? <span className="text-blue-600 cursor-pointer font-bold hover:underline" onClick={() => setState('Đăng ký')}>Đăng ký</span></>
+                        : <>Đã có tài khoản? <span className="text-blue-600 cursor-pointer font-bold hover:underline" onClick={() => setState('Đăng nhập')}>Đăng nhập</span></>
                     }
                 </p>
 
-                {/* Nút X để đóng Modal */}
                 <button 
                     type="button" 
                     onClick={() => setShowLogin(false)} 
-                    className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 text-xl"
+                    className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 text-xl transition-colors"
                 >
                     ✕
                 </button>

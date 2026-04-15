@@ -1,35 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, 
-  Button, Typography, Divider 
+  Button, Typography 
 } from "@mui/material";
-import { Clock, MapPin, Briefcase, DollarSign, Calendar, Building2 } from "lucide-react";
+import { Clock, MapPin, Briefcase, DollarSign, Building2 } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
 import { toast } from "react-toastify";
+// Import AppContext để sử dụng token và setShowLogin
+import { AppContext } from "../context/AppContext";
 
 dayjs.extend(relativeTime);
 dayjs.locale("vi");
 
-const ApplyJob = () => {
+const ApplyJob = ({ setShowLogin }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openConfirm, setOpenConfirm] = useState(false);
-
-  // Lấy token từ localStorage (nếu bạn đã làm phần Login)
-  const token = localStorage.getItem("userToken");
+  
+  // Lấy dữ liệu tập trung từ AppContext
+  const { backendUrl, token, userData, role } = useContext(AppContext);
 
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
         setLoading(true);
-        // Sử dụng endpoint bạn đã định nghĩa trong JobRoute.js
-        const res = await axios.get(`http://localhost:5000/api/jobs/${id}`);
+        // Sử dụng backendUrl từ context
+        const res = await axios.get(`${backendUrl}/api/jobs/${id}`);
         if (res.data.success) {
           setJob(res.data.job);
         }
@@ -41,24 +43,42 @@ const ApplyJob = () => {
       }
     };
     fetchJobDetail();
-  }, [id]);
+  }, [id, backendUrl]);
 
   const handleOpenApply = () => {
+    // 1. Kiểm tra đăng nhập
     if (!token) {
       toast.warning("Vui lòng đăng nhập để ứng tuyển!");
-      // Có thể mở setShowLogin(true) nếu bạn truyền prop từ App.jsx
+      setShowLogin(true); // Mở modal đăng nhập ngay lập tức
       return;
     }
+
+    // 2. Kiểm tra phân quyền (Chỉ 'user' mới được ứng tuyển)
+    if (role !== 'user') {
+      toast.error("Tài khoản tuyển dụng không thể ứng tuyển công việc!");
+      return;
+    }
+
     setOpenConfirm(true);
   };
 
   const handleConfirmApply = async () => {
     try {
-      // Giả sử bạn sẽ viết endpoint này ở ApplyRoute.js sau
-      toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ.");
-      setOpenConfirm(false);
+      // Gọi API ứng tuyển chính thức
+      const res = await axios.post(
+        `${backendUrl}/api/user/apply`, 
+        { jobId: id },
+        { headers: { token } }
+      );
+
+      if (res.data.success) {
+        toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ.");
+        setOpenConfirm(false);
+      } else {
+        toast.error(res.data.message || "Có lỗi xảy ra");
+      }
     } catch (error) {
-      toast.error("Có lỗi xảy ra, vui lòng thử lại.");
+      toast.error("Lỗi kết nối server, vui lòng thử lại.");
     }
   };
 
@@ -108,7 +128,6 @@ const ApplyJob = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cột chính: Mô tả chi tiết */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white p-8 rounded-xl shadow-sm border">
             <h2 className="text-xl font-bold mb-6 pb-2 border-b flex items-center gap-2">
@@ -128,7 +147,6 @@ const ApplyJob = () => {
           </div>
         </div>
 
-        {/* Cột phụ: Tóm tắt yêu cầu */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border">
             <h3 className="font-bold text-gray-800 mb-4 border-b pb-2">Thông tin bổ sung</h3>
@@ -161,25 +179,17 @@ const ApplyJob = () => {
         </DialogTitle>
         <DialogContent className="pt-6">
           <Typography variant="body1">
-            Bạn đang thực hiện ứng tuyển vào vị trí: <br/>
+            Bạn đang ứng tuyển vị trí: <br/>
             <strong className="text-blue-600 text-lg">{job.title}</strong>
           </Typography>
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-100 rounded-lg text-sm text-yellow-800">
-            Lưu ý: Bạn nên cập nhật hồ sơ cá nhân đầy đủ trước khi ứng tuyển để tăng cơ hội trúng tuyển.
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800">
+            Họ tên: <strong>{userData?.name}</strong> <br/>
+            Email: <strong>{userData?.email}</strong>
           </div>
         </DialogContent>
         <DialogActions className="p-4 bg-gray-50">
-          <Button onClick={() => setOpenConfirm(false)} color="inherit" className="font-semibold">
-            Hủy bỏ
-          </Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleConfirmApply}
-            className="px-6 font-bold"
-          >
-            Xác nhận gửi
-          </Button>
+          <Button onClick={() => setOpenConfirm(false)} color="inherit">Hủy</Button>
+          <Button variant="contained" color="primary" onClick={handleConfirmApply}>Gửi hồ sơ</Button>
         </DialogActions>
       </Dialog>
     </div>
