@@ -60,9 +60,6 @@ export const loginUser = async (req, res) => {
             return res.json({ success: false, message: "Người dùng không tồn tại!" });
         }
 
-        // DEBUG: Xem Backend có thực sự thấy chữ 'admin' không
-        console.log(`ĐĂNG NHẬP - Email: ${email} | Role từ DB:`, user.role);
-
         const isMatch = await bcrypt.compare(password, user.password);
         
         if (isMatch) {
