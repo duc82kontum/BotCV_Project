@@ -11,6 +11,7 @@ const JobList = () => {
       try {
         setLoading(true);
         // Gọi đến API lấy danh sách job từ Backend
+        const apiBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
         const response = await axios.get('http://localhost:5000/api/jobs/all');
         
         if (response.data.success) {
