@@ -4,18 +4,21 @@ import JobCard from './JobCard';
 
 const JobList = () => {
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true); // Thêm trạng thái loading để giao diện mượt hơn
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        // Gọi đến API lấy danh sách job từ Backend
+        
+        // 1. Lấy URL Backend linh hoạt từ biến môi trường
         const apiBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-        const response = await axios.get('http://localhost:5000/api/jobs/all');
+        
+        // 2. SỬA LỖI: Dùng biến apiBase thay vì gán cứng localhost
+        const response = await axios.get(`${apiBase}/api/jobs/all`);
         
         if (response.data.success) {
-          // Chỉ lấy những job có dữ liệu hợp lệ để tránh Crash giao diện
+          // Lọc dữ liệu sạch để tránh crash giao diện
           const validJobs = response.data.jobs.filter(job => job && job.title);
           setJobs(validJobs);
         }
@@ -28,7 +31,7 @@ const JobList = () => {
     fetchJobs();
   }, []);
 
-  // Giao diện khi đang tải dữ liệu
+  // Giao diện Loading
   if (loading) {
     return (
       <div className="py-20 text-center">
@@ -40,7 +43,6 @@ const JobList = () => {
 
   return (
     <div className="py-10">
-      {/* Header của danh sách việc làm */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2 font-sans">Việc làm mới nhất</h2>
@@ -51,7 +53,6 @@ const JobList = () => {
         </button>
       </div>
 
-      {/* Render danh sách Job bằng vòng lặp map */}
       {jobs.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {jobs.map(job => (
