@@ -35,7 +35,7 @@ const Navbar = ({ setShowLogin }) => {
                 </>
               )}
               {role === 'admin' && (
-                <p onClick={() => navigate('/admin-panel')} className='cursor-pointer text-red-600 font-bold'>Quản trị hệ thống</p>
+                <p onClick={() => navigate('/dashboard-admin')} className='cursor-pointer text-red-600 font-bold'>Quản trị hệ thống</p>
               )}
             </div>
           )}

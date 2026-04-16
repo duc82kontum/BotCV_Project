@@ -23,27 +23,33 @@ const Login = () => {
             const { data } = await axios.post(`${backendUrl}${endpoint}`, payload);
 
             if (data.success) {
-                // 1. CẬP NHẬT DỮ LIỆU ĐỘNG TỪ BACKEND (Admin/User)
-                // Thay thế 'user' bằng data.role
+                // 1. LƯU DỮ LIỆU ĐỘNG TỪ BACKEND TRẢ VỀ (Token và Role thật)
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('role', data.role); 
 
-                // Log để bạn kiểm tra trong Console trình duyệt
-                console.log("Quyền hạn nhận được:", data.role);
-
-                // 2. CẬP NHẬT STATE TRONG CONTEXT
+                // 2. CẬP NHẬT TRẠNG THÁI TRONG CONTEXT
                 setToken(data.token);
                 setRole(data.role); 
                 setUserData(data.user);
                 
                 toast.success(isLogin ? "Đăng nhập thành công!" : "Đăng ký thành công!");
                 
+                // 3. ĐIỀU HƯỚNG THÔNG MINH DỰA TRÊN QUYỀN HẠN (ROLE)
                 if (isLogin) {
-                    // Chuyển trang sau khi ghi dữ liệu xong
                     setTimeout(() => {
-                        navigate('/'); 
+                        if (data.role === 'admin') {
+                            // Nếu là Admin, chuyển thẳng vào Dashboard Admin
+                            navigate('/dashboard-admin');
+                        } else if (data.role === 'recruiter') {
+                            // Nếu là Nhà tuyển dụng, chuyển vào Dashboard Recruiter
+                            navigate('/dashboard');
+                        } else {
+                            // Nếu là User thường, quay về trang chủ
+                            navigate('/');
+                        }
                     }, 300);
                 } else {
+                    // Nếu vừa đăng ký xong, chuyển sang trạng thái Đăng nhập để người dùng login
                     setIsLogin(true);
                 }
             } else {

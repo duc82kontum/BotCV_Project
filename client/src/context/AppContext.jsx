@@ -7,71 +7,73 @@ export const AppContext = createContext();
 export const AppContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
     
-    // Khởi tạo state từ localStorage
+    // 1. Khởi tạo state: Ưu tiên lấy từ localStorage để giữ trạng thái khi F5
     const [token, setToken] = useState(localStorage.getItem('token') || '');
     const [role, setRole] = useState(localStorage.getItem('role') || ''); 
     const [userData, setUserData] = useState(null);
 
-    // 1. Hàm lấy thông tin người dùng (Đã sửa lỗi Endpoint để tránh 404)
+    // 2. Hàm lấy thông tin hồ sơ tập trung
     const loadUserProfileData = async () => {
+        // Chỉ chạy nếu có đủ thông tin định danh
         if (!token || !role) return;
 
         try {
-            // Đảm bảo endpoint khớp hoàn toàn với Backend (sử dụng dấu gạch nối -)
+            // Xác định Endpoint dựa trên Role
             let endpoint = '/api/user/get-profile';
             if (role === 'admin') endpoint = '/api/admin/profile';
             if (role === 'recruiter') endpoint = '/api/recruiter/get-profile';
 
             const { data } = await axios.get(backendUrl + endpoint, { 
                 headers: { 
+                    // Gửi token linh hoạt cho cả protectAdmin và authMiddleware
                     token: token, 
                     Authorization: `Bearer ${token}` 
                 }
             });
 
             if (data.success) {
-                // Nhận diện dữ liệu: data.user, data.recruiter, data.admin hoặc data.data
-                setUserData(data.user || data.recruiter || data.admin || data.data);
+                // Nhận diện dữ liệu linh hoạt từ Backend
+                setUserData(data.user || data.admin || data.recruiter || data.data);
             } else {
-                logout();
+                // Chỉ logout nếu thông báo lỗi liên quan đến xác thực
+                if (data.message && data.message.toLowerCase().includes("mã xác thực")) {
+                    logout();
+                }
             }
         } catch (error) {
-            console.error("Lỗi xác thực Profile:", error.response?.data || error.message);
-            // Nếu lỗi 404 là do sai endpoint, nếu lỗi 401/403 là do token
-            if (error.response?.status === 401 || error.response?.status === 403) {
+            const status = error.response?.status;
+            console.error("Lỗi xác thực Profile:", status || error.message);
+            
+            // CHỈ logout khi chắc chắn Token hết hạn (401) hoặc sai quyền nghiêm trọng (403)
+            if (status === 401 || status === 403) {
                 logout();
             }
+            // Các lỗi khác (404, 500) sẽ giữ nguyên trạng thái để tránh văng người dùng
         }
     }
 
-    // 2. Hàm Logout tập trung
+    // 3. Hàm Logout: Dọn dẹp sạch sẽ bộ nhớ
     const logout = () => {
         setToken('');
         setRole('');
         setUserData(null);
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        if (token) toast.info("Phiên làm việc đã kết hạn");
+        toast.info("Phiên làm việc đã kết thúc");
     }
 
-    // 3. Tự động đồng bộ hóa LocalStorage
+    // 4. Đồng bộ hóa LocalStorage khi State thay đổi
     useEffect(() => {
-        if (token) {
-            localStorage.setItem('token', token);
-        } else {
-            localStorage.removeItem('token');
-        }
+        if (token) localStorage.setItem('token', token);
+        else localStorage.removeItem('token');
     }, [token]);
 
     useEffect(() => {
-        if (role) {
-            localStorage.setItem('role', role);
-        } else {
-            localStorage.removeItem('role');
-        }
+        if (role) localStorage.setItem('role', role);
+        else localStorage.removeItem('role');
     }, [role]);
 
-    // 4. Tự động tải dữ liệu khi có Token và Role
+    // 5. Tự động nạp dữ liệu Profile
     useEffect(() => {
         if (token && role && !userData) {
             loadUserProfileData();

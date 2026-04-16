@@ -1,23 +1,28 @@
-import { useContext } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../context/AppContext';
+import React from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-    const { token, role } = useContext(AppContext);
-    const location = useLocation();
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  // 1. Lấy dữ liệu trực tiếp từ localStorage để đảm bảo có giá trị ngay khi F5
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const location = useLocation();
 
-    // 1. Nếu chưa đăng nhập -> Đẩy về trang chủ (hoặc trang Login)
-    if (!token) {
-        return <Navigate to="/" state={{ from: location }} replace />;
-    }
+  // 2. Kiểm tra sự tồn tại của Token
+  if (!token) {
+    console.warn("ProtectedRoute: Không tìm thấy token, điều hướng về trang chủ.");
+    return <Navigate to="/" state={{ from: location }} replace />
+  }
 
-    // 2. Nếu đã đăng nhập nhưng không đúng quyền -> Đẩy về trang chủ
-    if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-        return <Navigate to="/" replace />;
-    }
+  // 3. Kiểm tra quyền hạn (Role)
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    console.error(`ProtectedRoute: Quyền '${role}' không hợp lệ. Yêu cầu:`, allowedRoles);
+    
+    // Nếu là admin nhưng vào nhầm trang recruiter hoặc ngược lại, đẩy về đúng chỗ hoặc trang chủ
+    return <Navigate to="/" replace />
+  }
 
-    // 3. Hợp lệ thì cho vào
-    return children;
-};
+  // 4. Nếu mọi điều kiện thỏa mãn, cho phép truy cập nội dung
+  return children;
+}
 
 export default ProtectedRoute;
