@@ -4,7 +4,9 @@ import { AppContext } from '../context/AppContext'
 
 const Navbar = ({ setShowLogin }) => {
   const navigate = useNavigate()
-  const { token, userData, role, logout } = useContext(AppContext)
+  
+  // Lấy applyCount trực tiếp từ Context để đảm bảo tính Real-time
+  const { token, userData, role, logout, applyCount } = useContext(AppContext)
 
   return (
     <div className='shadow py-4 bg-white sticky top-0 z-50'>
@@ -19,64 +21,60 @@ const Navbar = ({ setShowLogin }) => {
         </h1>
 
         <div className='flex items-center gap-4'>
-          {/* Menu điều hướng dựa trên Role */}
+          {/* Menu điều hướng cho User */}
           {token && userData && (
             <div className='hidden lg:flex items-center gap-6 mr-4 text-sm font-medium text-gray-600'>
               {role === 'user' && (
                 <>
-                  <p onClick={() => navigate('/applications')} className='cursor-pointer hover:text-blue-600'>Việc đã ứng tuyển</p>
-                  <p onClick={() => navigate('/saved-jobs')} className='cursor-pointer hover:text-blue-600'>Việc đã lưu</p>
+                  <div 
+                    onClick={() => navigate('/applications')} 
+                    className='relative cursor-pointer hover:text-blue-600 flex items-center gap-1 transition-colors'
+                  >
+                    <span>Việc đã ứng tuyển</span>
+                    
+                    {/* Badge hiển thị số lượng: Sẽ tự động nhảy số khi Context thay đổi */}
+                    {applyCount > 0 && (
+                      <span className='absolute -top-2 -right-4 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md animate-bounce'>
+                        {applyCount}
+                      </span>
+                    )}
+                  </div>
+                  <p onClick={() => navigate('/saved-jobs')} className='cursor-pointer hover:text-blue-600 transition-colors'>Việc đã lưu</p>
                 </>
-              )}
-              {role === 'recruiter' && (
-                <>
-                  <p onClick={() => navigate('/dashboard')} className='cursor-pointer hover:text-blue-600 font-bold text-blue-600'>Bảng điều khiển</p>
-                  <p onClick={() => navigate('/dashboard/add-job')} className='cursor-pointer hover:text-blue-600'>Đăng tin mới</p>
-                </>
-              )}
-              {role === 'admin' && (
-                <p onClick={() => navigate('/dashboard-admin')} className='cursor-pointer text-red-600 font-bold'>Quản trị hệ thống</p>
               )}
             </div>
           )}
 
-          {/* Phần Account: Login hoặc User Info */}
           {token && userData ? (
-            <div className='flex items-center gap-3 group relative'>
-              <div className='text-right hidden sm:block'>
-                <p className='text-gray-800 font-bold leading-none'>
-                  {/* Hiển thị name nếu là user, hiển thị companyName nếu là recruiter */}
-                  {userData.name || userData.companyName}
-                </p>
-                <p className='text-[10px] uppercase tracking-widest text-blue-500 font-bold mt-1'>
-                  {role}
-                </p>
-              </div>
-              
-              <div className='w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-full font-bold shadow-md cursor-pointer border-2 border-white group-hover:border-blue-100 transition-all'>
-                {/* FIX LỖI charAt: Kiểm tra an toàn cho cả name và companyName */}
-                {(userData?.name?.charAt(0) || userData?.companyName?.charAt(0) || "U").toUpperCase()}
-              </div>
-
-              {/* Dropdown Menu */}
-              <div className='absolute top-full right-0 pt-2 hidden group-hover:block z-50 animate-fadeIn'>
-                <div className='bg-white border border-gray-100 rounded-lg shadow-2xl py-2 w-48 overflow-hidden'>
-                  <div className='px-4 py-2 border-b border-gray-50 mb-1'>
-                    <p className='text-xs text-gray-400 uppercase font-bold'>Tài khoản</p>
+            <div className='flex items-center gap-3'>
+              <div className='group relative'>
+                <div className='flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-all'>
+                  <img 
+                    src={userData.image || '/default_avatar.png'} 
+                    className='w-9 h-9 rounded-full object-cover border-2 border-blue-100 shadow-sm' 
+                    alt="profile" 
+                  />
+                  <div className='hidden sm:block'>
+                    <p className='text-sm font-bold text-gray-800 leading-tight'>{userData.name}</p>
+                    <p className='text-[10px] text-gray-400 uppercase font-bold tracking-wider'>{role}</p>
                   </div>
-                  
-                  {role === 'user' && (
-                    <p onClick={() => navigate('/profile')} className='px-4 py-2 hover:bg-blue-50 text-gray-700 cursor-pointer text-sm transition-colors'>
-                      Hồ sơ cá nhân
+                </div>
+                
+                {/* Dropdown Menu */}
+                <div className='absolute right-0 top-full pt-2 hidden group-hover:block w-48 animate-fadeIn'>
+                  <div className='bg-white shadow-2xl rounded-lg border border-gray-100 overflow-hidden'>
+                    {role === 'user' && (
+                      <p onClick={() => navigate('/profile')} className='px-4 py-2.5 hover:bg-blue-50 text-gray-700 cursor-pointer text-sm transition-colors border-b border-gray-50'>
+                        Hồ sơ cá nhân
+                      </p>
+                    )}
+                    <p 
+                      onClick={logout} 
+                      className='px-4 py-3 hover:bg-red-50 text-red-600 cursor-pointer text-sm font-bold transition-colors'
+                    >
+                      Đăng xuất
                     </p>
-                  )}
-
-                  <p 
-                    onClick={logout} 
-                    className='px-4 py-3 hover:bg-red-50 text-red-600 cursor-pointer text-sm font-bold transition-colors border-t mt-1'
-                  >
-                    Đăng xuất
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -90,7 +88,7 @@ const Navbar = ({ setShowLogin }) => {
               </p>
               <button 
                 onClick={() => setShowLogin(true)} 
-                className='bg-blue-600 text-white px-6 sm:px-9 py-2 rounded-full hover:bg-blue-700 transition-all font-medium shadow-md active:scale-95'
+                className='bg-blue-600 text-white px-7 py-2 rounded-full hover:bg-blue-700 transition-all font-medium shadow-md active:scale-95'
               >
                 Đăng nhập
               </button>

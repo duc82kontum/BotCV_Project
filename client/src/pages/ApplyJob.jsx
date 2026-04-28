@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Typography, CircularProgress 
 } from "@mui/material";
-import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle } from "lucide-react";
+import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle } from "lucide-react";
 import axios from "axios";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -21,70 +21,51 @@ const ApplyJob = ({ setShowLogin }) => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openConfirm, setOpenConfirm] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false); 
   const [isApplied, setIsApplied] = useState(false); 
+  const [applicationId, setApplicationId] = useState(null); // Lưu ID đơn ứng tuyển thực tế
   
-  const { backendUrl, token, userData, role } = useContext(AppContext);
+  const { backendUrl, token, userData, role, fetchApplyCount } = useContext(AppContext);
+
+  // Hàm tải dữ liệu chi tiết công việc và trạng thái ứng tuyển
+  //
+const fetchJobDetail = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${backendUrl}/api/jobs/${id}`);
+      if (res.data.success) {
+        setJob(res.data.job);
+      }
+
+      if (token && role === 'user') {
+        const appliedRes = await axios.get(`${backendUrl}/api/apply/check-applied/${id}`, {
+          headers: { token }
+        });
+        
+        setIsApplied(appliedRes.data.applied);
+        
+        // SỬA TẠI ĐÂY: Thử cả 2 cách lấy ID phổ biến để đảm bảo không bị null
+        if (appliedRes.data.applied) {
+          const appId = appliedRes.data.application?._id || appliedRes.data.applicationId;
+          setApplicationId(appId);
+          console.log("Đã tìm thấy ID đơn ứng tuyển:", appId); // Dòng này giúp bạn kiểm tra trong Console (F12)
+        } else {
+          setApplicationId(null);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu:", error);
+    } finally {
+      setLoading(false);
+    }
+};
 
   useEffect(() => {
-    const fetchJobDetail = async () => {
-      try {
-        setLoading(true);
-        // Lấy chi tiết công việc từ api/jobs
-        const res = await axios.get(`${backendUrl}/api/jobs/${id}`);
-        if (res.data.success) {
-          setJob(res.data.job);
-        }
-
-        // SỬA LỖI 404: Gọi đúng endpoint api/apply đã cấu hình trong server.js
-        if (token && role === 'user') {
-          const appliedRes = await axios.get(`${backendUrl}/api/apply/check-applied/${id}`, {
-            headers: { token }
-          });
-          setIsApplied(appliedRes.data.applied);
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchJobDetail();
   }, [id, backendUrl, token, role]);
 
-  const getLogoUrl = () => {
-    if (job?.logoName) {
-      try {
-        return new URL(`../assets/logo cong ty/${job.logoName}`, import.meta.url).href;
-      } catch (err) { return null; }
-    }
-    if (job?.recruiter?.logo) {
-      return job.recruiter.logo.startsWith('http') 
-        ? job.recruiter.logo 
-        : `${backendUrl}/${job.recruiter.logo.replace(/\\/g, "/")}`;
-    }
-    return null;
-  };
-
-  const handleOpenApply = () => {
-    if (!token) {
-      toast.warning("Vui lòng đăng nhập để ứng tuyển!");
-      setShowLogin(true);
-      return;
-    }
-    if (role !== 'user') {
-      toast.error("Tài khoản tuyển dụng không thể ứng tuyển!");
-      return;
-    }
-    if (isApplied) {
-      toast.info("Bạn đã nộp hồ sơ cho công việc này rồi.");
-      return;
-    }
-    setOpenConfirm(true);
-  };
-
   const handleConfirmApply = async () => {
     try {
-      // SỬA LỖI: Gọi đúng endpoint api/apply/add
       const res = await axios.post(
         `${backendUrl}/api/apply/add`, 
         { jobId: id },
@@ -95,10 +76,46 @@ const ApplyJob = ({ setShowLogin }) => {
         toast.success("Ứng tuyển thành công!");
         setIsApplied(true);
         setOpenConfirm(false);
+        
+        // CẬP NHẬT: Phải đợi nạp lại dữ liệu để lấy applicationId mới từ Database
+        await fetchJobDetail(); 
+        
+        fetchApplyCount(); // Cập nhật số lượng trên Navbar
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Lỗi ứng tuyển");
     }
+  };
+
+  const handleConfirmCancel = async () => {
+    // Kiểm tra mã đơn trước khi gọi API xóa
+    if (!applicationId) {
+        return toast.error("Không tìm thấy mã đơn ứng tuyển để hủy! Vui lòng thử lại.");
+    }
+
+    try {
+      // Gọi API xóa theo ID đơn ứng tuyển giống trang Applications
+      const res = await axios.delete(`${backendUrl}/api/apply/delete/${applicationId}`, {
+        headers: { token }
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Đã hủy ứng tuyển thành công!");
+        setIsApplied(false);
+        setApplicationId(null);
+        setOpenCancel(false);
+        fetchApplyCount(); // Cập nhật lại số lượng trên Navbar ngay lập tức
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể hủy đơn lúc này");
+    }
+  };
+
+  const getLogoUrl = () => {
+    if (job?.recruiter?.image) {
+      return `${backendUrl}/uploads/${job.recruiter.image}`;
+    }
+    return null;
   };
 
   if (loading) return (
@@ -138,26 +155,33 @@ const ApplyJob = ({ setShowLogin }) => {
             </div>
             <div className="flex items-center justify-center md:justify-start gap-2 bg-gray-50 p-2 rounded-lg text-red-600 font-medium">
               <Clock size={20} />
-              <span>Hạn: {dayjs(job.deadline).format("DD/MM/YYYY")}</span>
+              <span>Hạn: {job.deadline ? dayjs(job.deadline).format("DD/MM/YYYY") : "Chưa cập nhật"}</span>
             </div>
           </div>
         </div>
 
-        <button 
-          onClick={handleOpenApply}
-          disabled={isApplied}
-          className={`w-full md:w-auto px-12 py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-            isApplied 
-            ? "bg-green-100 text-green-700 cursor-default border border-green-200" 
-            : "bg-blue-600 hover:bg-blue-700 text-white hover:-translate-y-1"
-          }`}
-        >
+        <div className="flex flex-col gap-3 w-full md:w-auto min-w-[200px]">
           {isApplied ? (
-            <><CheckCircle size={20} /> ĐÃ ỨNG TUYỂN</>
+            <>
+              <div className="bg-green-50 text-green-700 border border-green-200 py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm">
+                <CheckCircle size={20} /> ĐÃ ỨNG TUYỂN
+              </div>
+              <button 
+                onClick={() => setOpenCancel(true)}
+                className="w-full bg-white text-red-600 border border-red-200 py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-50 transition-all shadow-sm active:scale-95"
+              >
+                <XCircle size={20} /> HỦY ỨNG TUYỂN
+              </button>
+            </>
           ) : (
-            "ỨNG TUYỂN NGAY"
+            <button 
+              onClick={() => !token ? setShowLogin(true) : setOpenConfirm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-4 px-10 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95"
+            >
+              ỨNG TUYỂN NGAY
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -171,17 +195,7 @@ const ApplyJob = ({ setShowLogin }) => {
               dangerouslySetInnerHTML={{ __html: job.description }}
             />
           </div>
-
-          <div className="bg-white p-8 rounded-2xl shadow-sm border">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
-              <MapPin size={22} className="text-blue-600" /> Địa điểm làm việc
-            </h2>
-            <p className="text-gray-700 bg-blue-50/50 p-4 rounded-xl border border-blue-50 italic">
-              {job.address || "Chi tiết địa chỉ sẽ được cung cấp khi phỏng vấn."}
-            </p>
-          </div>
         </div>
-
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border sticky top-24">
             <h3 className="font-bold text-gray-900 mb-6 border-b pb-2 uppercase text-sm tracking-widest">Thông tin bổ sung</h3>
@@ -203,35 +217,24 @@ const ApplyJob = ({ setShowLogin }) => {
       </div>
 
       <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)} maxWidth="sm" fullWidth>
-        <DialogTitle className="bg-blue-600 text-white font-bold p-4">
-          Xác nhận gửi hồ sơ
-        </DialogTitle>
-        <DialogContent className="pt-8">
-          <Typography variant="body1" className="mb-4">
-            Bạn đang thực hiện ứng tuyển vào vị trí: <br/>
-            <strong className="text-blue-600 text-xl block mt-1">{job.title}</strong>
-          </Typography>
-          <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-            <p className="text-xs text-gray-400 uppercase font-bold mb-2">Thông tin hồ sơ của bạn</p>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-              <span>Họ tên:</span> <strong className="text-right">{userData?.name}</strong>
-              <span>Email:</span> <strong className="text-right">{userData?.email}</strong>
-            </div>
-            <p className="mt-4 text-[10px] text-gray-400 italic">
-              * Hệ thống sẽ tự động gửi CV đã lưu trong tài khoản của bạn đến nhà tuyển dụng.
-            </p>
-          </div>
+        <DialogTitle className="bg-blue-600 text-white font-bold p-4 text-center">Xác nhận gửi hồ sơ</DialogTitle>
+        <DialogContent className="pt-8 text-center">
+          <Typography variant="body1">Bạn đang ứng tuyển vị trí: <strong>{job.title}</strong></Typography>
         </DialogContent>
-        <DialogActions className="p-4 bg-gray-50 gap-2">
-          <Button onClick={() => setOpenConfirm(false)} color="inherit" className="font-bold">Hủy</Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleConfirmApply}
-            className="bg-blue-600 font-bold px-6"
-          >
-            Gửi ứng tuyển
-          </Button>
+        <DialogActions className="p-4 bg-gray-50 gap-2 justify-center">
+          <Button onClick={() => setOpenConfirm(false)} color="inherit">Đóng</Button>
+          <Button variant="contained" onClick={handleConfirmApply} className="bg-blue-600 px-6 font-bold text-white shadow-none">Xác nhận gửi</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openCancel} onClose={() => setOpenCancel(false)} maxWidth="xs" fullWidth>
+        <DialogTitle className="text-red-600 font-bold p-4 text-center border-b">Hủy ứng tuyển?</DialogTitle>
+        <DialogContent className="pt-6 text-center">
+          <Typography>Bạn có chắc chắn muốn rút lại hồ sơ cho vị trí <strong>{job.title}</strong> không?</Typography>
+        </DialogContent>
+        <DialogActions className="p-4 gap-2 justify-center bg-gray-50">
+          <Button onClick={() => setOpenCancel(false)} color="inherit" className="font-bold">Giữ lại</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmCancel} className="font-bold bg-red-600 px-6 text-white shadow-none">Xác nhận hủy</Button>
         </DialogActions>
       </Dialog>
     </div>
