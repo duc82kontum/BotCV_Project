@@ -34,19 +34,17 @@ const RecruiterLogin = () => {
         const { data } = await axios.post(`${backendUrl}/api/company/login`, { email, password });
 
         if (data.success) {
-          // 1. Cập nhật State trong Context ngay lập tức
+          // QUAN TRỌNG: Lưu trực tiếp vào localStorage để tránh mất session khi reload (F5)
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', 'recruiter');
+
+          // Cập nhật vào Context State
           setToken(data.token);
-          setRole(data.role); // Nhận 'recruiter' từ backend trả về
-          setUserData(data.userData); // Lưu thông tin gộp (Company + Profile)
-          
-          // 2. Lưu vào LocalStorage để duy trì phiên đăng nhập khi F5
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("role", data.role); // role lúc này là 'recruiter'
-          
-          toast.success("Đăng nhập Nhà tuyển dụng thành công!");
-          
-          // 3. Chuyển hướng về trang quản lý
-          navigate("/dashboard"); 
+          setRole('recruiter');
+          setUserData(data.userData);
+
+          toast.success("Đăng nhập thành công!");
+          navigate('/dashboard');
         } else {
           toast.error(data.message);
         }
@@ -56,47 +54,42 @@ const RecruiterLogin = () => {
           return toast.error("Mật khẩu xác nhận không khớp!");
         }
         if (!agreeTerms) {
-          return toast.error("Vui lòng đồng ý với điều khoản dịch vụ!");
+          return toast.error("Bạn phải đồng ý với điều khoản dịch vụ!");
         }
 
         const { data } = await axios.post(`${backendUrl}/api/company/register`, {
           fullName,
           companyName,
           email,
-          password,
+          password
         });
 
         if (data.success) {
-          toast.success("Đăng ký tài khoản doanh nghiệp thành công! Hãy đăng nhập.");
+          toast.success("Đăng ký thành công! Hãy đăng nhập.");
           setState("Login");
-          // Xóa các field đăng ký để user nhập login
-          setFullName("");
-          setCompanyName("");
-          setRePassword("");
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
-      console.error("Login Error:", error);
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại!");
+      console.error("Lỗi đăng nhập/đăng ký:", error);
+      toast.error(error.response?.data?.message || "Đã có lỗi xảy ra!");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg border border-gray-100">
-        <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-blue-600 mb-2">BotCV Business</h1>
-          <h2 className="text-xl font-bold text-gray-900">
-            {state === "Login" ? "Đăng nhập Nhà tuyển dụng" : "Đăng ký tài khoản Công ty"}
+    <div className="min-h-[80vh] flex items-center justify-center p-4 bg-gray-50">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-blue-600 tracking-tighter mb-2">
+            Bot<span className="text-gray-800">CV</span> Business
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Giải pháp tuyển dụng thông minh cho doanh nghiệp
+          <p className="text-gray-500 text-sm font-medium">
+            {state === "Login" ? "Chào mừng Nhà tuyển dụng quay trở lại" : "Khởi tạo tài khoản doanh nghiệp của bạn"}
           </p>
         </div>
 
-        <form className="mt-8 space-y-4" onSubmit={onSubmitHandler}>
+        <form onSubmit={onSubmitHandler} className="space-y-4">
           {state === "Register" && (
             <>
               <TextField
@@ -106,29 +99,29 @@ const RecruiterLogin = () => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                margin="normal"
+                size="small"
               />
               <TextField
                 fullWidth
-                label="Tên công ty"
+                label="Tên công ty / Doanh nghiệp"
                 variant="outlined"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 required
-                margin="normal"
+                size="small"
               />
             </>
           )}
 
           <TextField
             fullWidth
-            label="Email doanh nghiệp"
+            label="Email công việc"
             type="email"
             variant="outlined"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            margin="normal"
+            size="small"
           />
 
           <TextField
@@ -139,7 +132,7 @@ const RecruiterLogin = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            margin="normal"
+            size="small"
           />
 
           {state === "Register" && (
@@ -152,16 +145,17 @@ const RecruiterLogin = () => {
                 value={rePassword}
                 onChange={(e) => setRePassword(e.target.value)}
                 required
-                margin="normal"
+                size="small"
               />
-              <div className="flex items-center mt-2">
-                <Checkbox
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
+              <div className="flex items-center gap-2 mt-2">
+                <Checkbox 
+                  checked={agreeTerms} 
+                  onChange={(e) => setAgreeTerms(e.target.checked)} 
                   color="primary"
+                  size="small"
                 />
-                <span className="text-sm text-gray-600">
-                  Tôi đồng ý với các điều khoản và chính sách bảo mật.
+                <span className="text-xs text-gray-600">
+                  Tôi đồng ý với các <span className="text-blue-600 cursor-pointer">điều khoản</span> và <span className="text-blue-600 cursor-pointer">chính sách bảo mật</span>.
                 </span>
               </div>
             </>
@@ -173,28 +167,29 @@ const RecruiterLogin = () => {
             variant="contained"
             size="large"
             sx={{
-              backgroundColor: "#2563eb", // blue-600
-              py: 1.5,
+              backgroundColor: "#2563eb",
+              py: 1.2,
               mt: 2,
               fontWeight: "bold",
-              fontSize: "1rem",
               textTransform: "none",
-              borderRadius: "8px",
+              borderRadius: "10px",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
               '&:hover': {
-                backgroundColor: "#1d4ed8", // blue-700
+                backgroundColor: "#1d4ed8",
+                boxShadow: "0 6px 16px rgba(37, 99, 235, 0.3)",
               }
             }}
           >
-            {state === "Login" ? "Đăng nhập ngay" : "Tạo tài khoản công ty"}
+            {state === "Login" ? "Đăng nhập ngay" : "Đăng ký tài khoản"}
           </Button>
         </form>
 
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            {state === "Login" ? "Doanh nghiệp bạn mới đến BotCV?" : "Đã có tài khoản doanh nghiệp?"}{" "}
+        <div className="text-center mt-8 pt-6 border-t border-gray-50">
+          <p className="text-sm text-gray-500">
+            {state === "Login" ? "Bạn chưa có tài khoản doanh nghiệp?" : "Đã có tài khoản doanh nghiệp?"}{" "}
             <span
               onClick={() => setState(state === "Login" ? "Register" : "Login")}
-              className="text-blue-600 font-bold cursor-pointer hover:underline"
+              className="text-blue-600 font-bold cursor-pointer hover:text-blue-700 underline-offset-4 hover:underline"
             >
               {state === "Login" ? "Đăng ký ngay" : "Đăng nhập tại đây"}
             </span>
