@@ -8,6 +8,7 @@ import jobRouter from "./routes/JobRoute.js";
 import recruiterRouter from './routes/RecruiterRoute.js';
 import adminRouter from './routes/AdminRoute.js';
 import companyRouter from './routes/companyRoutes.js';
+import ApplyRoute from "./routes/ApplyRoute.js";
 
 // 1. Khởi tạo App
 const app = express();
@@ -55,6 +56,9 @@ app.use('/api/recruiter', recruiterRouter);
 
 // QUẢN TRỊ HỆ THỐNG
 app.use("/api/admin", adminRouter);
+
+// apply job
+app.use("/api/apply", ApplyRoute);
 
 // Route kiểm tra mặc định
 app.get("/", (req, res) => {
