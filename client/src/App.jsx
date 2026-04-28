@@ -15,7 +15,8 @@ import SavedJobs from './pages/SavedJobs';
 import Dashboard from './pages/Recuiter/Dashboard';
 import DashboardHome from './pages/Recuiter/DashboardHome';
 import ViewApplication from './pages/Recuiter/ViewApplication';
-import AddJob from './pages/Recuiter/AddJob'; // <-- ĐÃ THÊM IMPORT TRANG ĐĂNG TIN
+import AddJob from './pages/Recuiter/AddJob'; 
+import ManageJobs from './pages/Recuiter/ManageJobs'; // <-- IMPORT TRANG QUẢN LÝ TIN ĐĂNG
 
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
@@ -77,7 +78,8 @@ const App = () => {
               {/* Nested Routes: Các trang con sẽ được render vào thẻ <Outlet /> của Dashboard */}
               <Route index element={<DashboardHome />} />
               <Route path='view-applications' element={<ViewApplication />} />
-              <Route path='add-job' element={<AddJob />} /> {/* <-- ĐÃ THÊM ROUTE ĐĂNG TIN */}
+              <Route path='add-job' element={<AddJob />} /> 
+              <Route path='manage-jobs' element={<ManageJobs />} /> {/* <-- ĐÃ THÊM ROUTE QUẢN LÝ TIN */}
             </Route>
 
             {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}
