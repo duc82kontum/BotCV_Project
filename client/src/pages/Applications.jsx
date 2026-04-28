@@ -2,13 +2,15 @@ import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom'; // Thêm useNavigate để điều hướng
 import { AppContext } from '../context/AppContext';
 
 const Applications = () => {
+  const navigate = useNavigate(); // Khởi tạo hàm điều hướng
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Lấy fetchApplyCount từ Context để cập nhật con số trên Navbar
+  // Lấy dữ liệu từ Context
   const { backendUrl, token, fetchApplyCount } = useContext(AppContext);
 
   // Hàm lấy danh sách đã ứng tuyển
@@ -20,7 +22,6 @@ const Applications = () => {
       });
 
       if (data.success) {
-        console.log("Dữ liệu từ Server:", data.applications); 
         setApplications(data.applications);
       }
     } catch (error) {
@@ -40,12 +41,8 @@ const Applications = () => {
 
         if (data.success) {
           toast.success(data.message);
-          
-          // 1. Tải lại danh sách tại trang hiện tại
           await fetchUserApplications();
-          
-          // 2. Cập nhật lại con số trên Navbar ngay lập tức
-          fetchApplyCount(); 
+          fetchApplyCount(); // Cập nhật Navbar ngay lập tức
         }
       } catch (error) {
         toast.error(error.response?.data?.message || "Lỗi khi hủy ứng tuyển");
@@ -77,7 +74,11 @@ const Applications = () => {
           <tbody>
             {applications.length > 0 ? (
               applications.map((app, index) => (
-                <tr key={index} className="border-b hover:bg-gray-50 transition-all">
+                <tr 
+                  key={index} 
+                  className="border-b hover:bg-gray-50 transition-all cursor-pointer" // Thêm hiệu ứng trỏ chuột
+                  onClick={() => navigate(`/apply-job/${app.jobId?._id}`)} // Tự động chuyển hướng khi click vào dòng
+                >
                   <td className="p-4 flex items-center gap-3">
                     <img 
                       src={app.companyId?.image 
@@ -91,7 +92,7 @@ const Applications = () => {
                     <span className="font-medium text-gray-800">{app.companyId?.companyName}</span>
                   </td>
                   <td className="p-4">
-                    <span className="text-blue-600 font-medium hover:underline cursor-pointer">
+                    <span className="text-blue-600 font-medium hover:underline">
                       {app.jobId?.title}
                     </span>
                   </td>
@@ -110,7 +111,10 @@ const Applications = () => {
                   </td>
                   <td className="p-4 text-center">
                     <button 
-                      onClick={() => handleCancelApply(app._id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn sự kiện click lan ra dòng <tr> để không bị nhảy trang khi nhấn nút hủy
+                        handleCancelApply(app._id);
+                      }}
                       className="text-red-500 hover:text-white border border-red-500 hover:bg-red-500 px-3 py-1 rounded transition-all text-sm font-medium"
                     >
                       Hủy đơn

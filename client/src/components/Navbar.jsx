@@ -5,8 +5,16 @@ import { AppContext } from '../context/AppContext'
 const Navbar = ({ setShowLogin }) => {
   const navigate = useNavigate()
   
-  // Lấy applyCount trực tiếp từ Context để đảm bảo tính Real-time
+  // Lấy dữ liệu từ Context
   const { token, userData, role, logout, applyCount } = useContext(AppContext)
+
+  // Hàm lấy chữ cái đầu tiên của tên người dùng và chuyển thành chữ hoa
+  const getUserInitial = () => {
+    if (userData && userData.name) {
+      return userData.name.charAt(0).toUpperCase();
+    }
+    return 'U'; // Mặc định nếu không lấy được tên
+  };
 
   return (
     <div className='shadow py-4 bg-white sticky top-0 z-50'>
@@ -32,7 +40,7 @@ const Navbar = ({ setShowLogin }) => {
                   >
                     <span>Việc đã ứng tuyển</span>
                     
-                    {/* Badge hiển thị số lượng: Sẽ tự động nhảy số khi Context thay đổi */}
+                    {/* Badge số lượng đơn ứng tuyển */}
                     {applyCount > 0 && (
                       <span className='absolute -top-2 -right-4 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md animate-bounce'>
                         {applyCount}
@@ -49,11 +57,12 @@ const Navbar = ({ setShowLogin }) => {
             <div className='flex items-center gap-3'>
               <div className='group relative'>
                 <div className='flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-all'>
-                  <img 
-                    src={userData.image || '/default_avatar.png'} 
-                    className='w-9 h-9 rounded-full object-cover border-2 border-blue-100 shadow-sm' 
-                    alt="profile" 
-                  />
+                  
+                  {/* PHẦN HIỂN THỊ CHỮ CÁI ĐẦU THAY CHO ẢNH */}
+                  <div className='w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold border-2 border-blue-100 shadow-sm'>
+                    {getUserInitial()}
+                  </div>
+
                   <div className='hidden sm:block'>
                     <p className='text-sm font-bold text-gray-800 leading-tight'>{userData.name}</p>
                     <p className='text-[10px] text-gray-400 uppercase font-bold tracking-wider'>{role}</p>
