@@ -37,23 +37,23 @@ export const applyForJob = async (req, res) => {
 };
 
 // 2. Kiểm tra trạng thái ứng tuyển (Xử lý lỗi 404 từ ảnh trước của bạn)
+//
 export const checkAppliedStatus = async (req, res) => {
     try {
         const { jobId } = req.params;
-        const userId = req.user.id; // Lấy ID người dùng từ middleware verifyUser
+        const userId = req.user.id;
 
         const application = await Apply.findOne({ userId, jobId });
         
-        // Trả về true nếu đã có đơn ứng tuyển, false nếu chưa
         res.status(200).json({ 
             success: true, 
-            applied: !!application 
+            applied: !!application,
+            application: application // THÊM DÒNG NÀY: Để Frontend lấy được _id đơn ứng tuyển
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
 // Lấy danh sách việc làm mà người dùng đã ứng tuyển
 //
 export const getUserApplications = async (req, res) => {
@@ -69,6 +69,25 @@ export const getUserApplications = async (req, res) => {
             success: true, 
             applications 
         });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Hủy ứng tuyển
+export const deleteApplication = async (req, res) => {
+    try {
+        const { id } = req.params; // ID của đơn ứng tuyển (Apply ID)
+        const userId = req.user.id;
+
+        // Tìm và xóa đơn ứng tuyển nếu nó thuộc về người dùng này
+        const deletedApply = await Apply.findOneAndDelete({ _id: id, userId });
+
+        if (!deletedApply) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy đơn ứng tuyển để hủy!" });
+        }
+
+        res.status(200).json({ success: true, message: "Đã hủy ứng tuyển thành công!" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
