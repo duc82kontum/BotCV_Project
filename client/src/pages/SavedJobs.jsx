@@ -4,13 +4,15 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import BackButton from '../components/BackButton';
-import { MapPin, DollarSign, Briefcase, Trash2, Bookmark } from 'lucide-react'; // Thêm icon để UI sinh động hơn
+import { MapPin, DollarSign, Briefcase, Trash2, Bookmark } from 'lucide-react'; 
 
 const SavedJobs = () => {
   const [savedJobs, setSavedJobs] = useState([]); 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { backendUrl, token } = useContext(AppContext);
+  
+  // SỬA: Lấy thêm fetchSavedCount để cập nhật số lượng trên Navbar
+  const { backendUrl, token, fetchSavedCount } = useContext(AppContext);
 
   const fetchSavedJobs = async () => {
     try {
@@ -30,14 +32,19 @@ const SavedJobs = () => {
 
   // Tính năng bỏ lưu nhanh ngay tại trang danh sách
   const handleRemoveSave = async (e, jobId) => {
-    e.stopPropagation(); // Ngăn việc nhảy sang trang chi tiết khi ấn nút xóa
+    e.stopPropagation(); 
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/save-job`, { jobId }, {
         headers: { token }
       });
       if (data.success) {
+        // Cập nhật danh sách tại chỗ
+        setSavedJobs(prev => prev.filter(job => job._id !== jobId));
+        
+        // Cập nhật lại số lượng trên Navbar thông qua hàm từ Context
+        fetchSavedCount(); 
+        
         toast.success("Đã bỏ lưu");
-        setSavedJobs(prev => prev.filter(job => job._id !== jobId)); // Cập nhật UI ngay lập tức
       }
     } catch (error) {
       toast.error("Thao tác thất bại");
@@ -51,7 +58,7 @@ const SavedJobs = () => {
   if (loading) return (
     <div className="min-h-[65vh] flex flex-col items-center justify-center gap-3">
       <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-gray-500 font-medium">Đang tìm lại các việc làm bạn quan tâm...</div>
+      <div className="text-gray-500 font-medium">Đang tải danh sách đã lưu...</div>
     </div>
   );
 
@@ -78,7 +85,6 @@ const SavedJobs = () => {
               onClick={() => navigate(`/apply-job/${job._id}`)}
               className="group bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-300 cursor-pointer relative overflow-hidden"
             >
-              {/* Trang trí góc thẻ */}
               <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-blue-600 transition-colors duration-300"></div>
               
               <div className="relative z-10">

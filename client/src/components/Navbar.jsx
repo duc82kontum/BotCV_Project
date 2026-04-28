@@ -5,8 +5,8 @@ import { AppContext } from '../context/AppContext'
 const Navbar = ({ setShowLogin }) => {
   const navigate = useNavigate()
   
-  // Lấy dữ liệu từ Context
-  const { token, userData, role, logout, applyCount } = useContext(AppContext)
+  // Lấy applyCount và savedCount trực tiếp từ Context để đảm bảo tính Real-time
+  const { token, userData, role, logout, applyCount, savedCount } = useContext(AppContext)
 
   // Hàm lấy chữ cái đầu tiên của tên người dùng và chuyển thành chữ hoa
   const getUserInitial = () => {
@@ -34,6 +34,7 @@ const Navbar = ({ setShowLogin }) => {
             <div className='hidden lg:flex items-center gap-6 mr-4 text-sm font-medium text-gray-600'>
               {role === 'user' && (
                 <>
+                  {/* Mục Việc đã ứng tuyển */}
                   <div 
                     onClick={() => navigate('/applications')} 
                     className='relative cursor-pointer hover:text-blue-600 flex items-center gap-1 transition-colors'
@@ -47,7 +48,21 @@ const Navbar = ({ setShowLogin }) => {
                       </span>
                     )}
                   </div>
-                  <p onClick={() => navigate('/saved-jobs')} className='cursor-pointer hover:text-blue-600 transition-colors'>Việc đã lưu</p>
+
+                  {/* Mục Việc đã lưu với Badge số lượng */}
+                  <div 
+                    onClick={() => navigate('/saved-jobs')} 
+                    className='relative cursor-pointer hover:text-blue-600 flex items-center gap-1 transition-colors'
+                  >
+                    <span>Việc đã lưu</span>
+                    
+                    {/* Badge số lượng việc làm đã lưu: Sẽ tự động cập nhật từ Context */}
+                    {savedCount > 0 && (
+                      <span className='absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md animate-bounce'>
+                        {savedCount}
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
             </div>

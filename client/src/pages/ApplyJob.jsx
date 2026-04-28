@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Typography, CircularProgress 
 } from "@mui/material";
-import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle, Heart } from "lucide-react"; // Thêm Heart icon
+import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle, Heart } from "lucide-react"; 
 import axios from "axios";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -24,10 +24,18 @@ const ApplyJob = ({ setShowLogin }) => {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openCancel, setOpenCancel] = useState(false); 
   const [isApplied, setIsApplied] = useState(false); 
-  const [isSaved, setIsSaved] = useState(false); // State lưu trạng thái đã lưu hay chưa
+  const [isSaved, setIsSaved] = useState(false); 
   const [applicationId, setApplicationId] = useState(null); 
   
-  const { backendUrl, token, userData, role, fetchApplyCount } = useContext(AppContext);
+  // ĐƯA VÀO ĐÂY: Tất cả logic lấy từ Context phải nằm trong thân Component
+  const { 
+    backendUrl, 
+    token, 
+    userData, 
+    role, 
+    fetchApplyCount, 
+    fetchSavedCount 
+  } = useContext(AppContext);
 
   const fetchJobDetail = async () => {
     try {
@@ -52,7 +60,7 @@ const ApplyJob = ({ setShowLogin }) => {
           setApplicationId(null);
         }
 
-        // LOGIC: Kiểm tra xem công việc này đã được lưu chưa
+        // Kiểm tra trạng thái lưu công việc
         const savedRes = await axios.get(`${backendUrl}/api/user/check-saved/${id}`, {
           headers: { token }
         });
@@ -78,6 +86,8 @@ const ApplyJob = ({ setShowLogin }) => {
       });
       if (res.data.success) {
         setIsSaved(!isSaved);
+        // Cập nhật con số trên Navbar ngay lập tức
+        fetchSavedCount(); 
         toast.success(isSaved ? "Đã bỏ lưu công việc" : "Lưu công việc thành công!");
       }
     } catch (error) {
@@ -199,7 +209,6 @@ const ApplyJob = ({ setShowLogin }) => {
             </button>
           )}
 
-          {/* NÚT LƯU CÔNG VIỆC THÊM MỚI */}
           <button 
             onClick={handleSaveJob}
             className={`w-full py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all border shadow-sm active:scale-95 ${

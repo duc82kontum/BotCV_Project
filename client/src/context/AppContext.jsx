@@ -12,10 +12,11 @@ export const AppContextProvider = (props) => {
     const [role, setRole] = useState(localStorage.getItem('role') || ''); 
     const [userData, setUserData] = useState(null);
     
-    // THÊM: State quản lý số lượng việc làm đã ứng tuyển
+    // Quản lý số lượng đơn ứng tuyển và việc làm đã lưu
     const [applyCount, setApplyCount] = useState(0);
+    const [savedCount, setSavedCount] = useState(0); // THÊM MỚI
 
-    // 2. Hàm lấy số lượng đơn ứng tuyển (Để cập nhật Real-time cho Navbar)
+    // 2. Hàm lấy số lượng đơn ứng tuyển
     const fetchApplyCount = async () => {
         if (!token || role !== 'user') {
             setApplyCount(0);
@@ -33,7 +34,25 @@ export const AppContextProvider = (props) => {
         }
     };
 
-    // 3. Hàm lấy thông tin hồ sơ tập trung
+    // 3. Hàm lấy số lượng việc làm đã lưu (Cập nhật Real-time cho Navbar)
+    const fetchSavedCount = async () => {
+        if (!token || role !== 'user') {
+            setSavedCount(0);
+            return;
+        }
+        try {
+            const { data } = await axios.get(backendUrl + '/api/user/saved-jobs', {
+                headers: { token }
+            });
+            if (data.success) {
+                setSavedCount(data.savedJobs.length);
+            }
+        } catch (error) {
+            console.error("Lỗi lấy số lượng việc đã lưu:", error.message);
+        }
+    };
+
+    // 4. Hàm lấy thông tin hồ sơ tập trung
     const loadUserProfileData = async () => {
         if (!token || !role) return;
 
@@ -64,18 +83,19 @@ export const AppContextProvider = (props) => {
         }
     }
 
-    // 4. Hàm Logout
+    // 5. Hàm Logout
     const logout = () => {
         setToken('');
         setRole('');
         setUserData(null);
-        setApplyCount(0); // Reset số lượng khi logout
+        setApplyCount(0);
+        setSavedCount(0); // Reset số lượng đã lưu khi logout
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         toast.info("Phiên làm việc đã kết thúc");
     }
 
-    // 5. Đồng bộ LocalStorage
+    // 6. Đồng bộ LocalStorage
     useEffect(() => {
         if (token) localStorage.setItem('token', token);
         else localStorage.removeItem('token');
@@ -86,11 +106,14 @@ export const AppContextProvider = (props) => {
         else localStorage.removeItem('role');
     }, [role]);
 
-    // 6. Tự động nạp dữ liệu khi khởi chạy hoặc đăng nhập
+    // 7. Tự động nạp dữ liệu khi khởi chạy hoặc đăng nhập
     useEffect(() => {
         if (token && role) {
             if (!userData) loadUserProfileData();
-            if (role === 'user') fetchApplyCount(); // Tự nạp số lượng nếu là ứng viên
+            if (role === 'user') {
+                fetchApplyCount();
+                fetchSavedCount(); // Tự nạp số lượng đã lưu
+            }
         }
     }, [token, role]);
 
@@ -99,8 +122,10 @@ export const AppContextProvider = (props) => {
         token, setToken,
         role, setRole,
         userData, setUserData,
-        applyCount, setApplyCount, // Export state để Navbar dùng
-        fetchApplyCount,           // Export hàm để ApplyJob và Applications dùng
+        applyCount, setApplyCount,
+        savedCount, setSavedCount, // Export state số lượng đã lưu
+        fetchApplyCount,
+        fetchSavedCount,           // Export hàm để gọi lại sau khi nhấn Lưu/Bỏ lưu
         loadUserProfileData,
         logout
     };
