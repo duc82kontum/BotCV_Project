@@ -3,7 +3,10 @@ import {
     resgisterCompany, 
     loginCompany, 
     getCompanyProfile,
-    postJob // Import thêm hàm đăng tin
+    postJob,
+    getCompanyPostedJobs, // THÊM 3 HÀM NÀY VÀO IMPORT
+    changeJobStatus,
+    deleteJobs
 } from '../controllers/companyController.js';
 import { protectCompany } from '../middleware/authMiddleware.js';
 
@@ -23,5 +26,10 @@ router.get('/profile', protectCompany, getCompanyProfile);
 // Tuyến đường Đăng tin tuyển dụng mới
 // Khớp với: POST /api/company/post-job
 router.post('/post-job', protectCompany, postJob);
+
+// --- 3 ROUTE MỚI CHO QUẢN LÝ TIN ĐĂNG ---
+router.get('/list-jobs', protectCompany, getCompanyPostedJobs); // Lấy danh sách
+router.post('/change-job', protectCompany, changeJobStatus);    // Ẩn/hiện tin
+router.delete('/delete/:id', protectCompany, deleteJobs);       // Xóa tin
 
 export default router;

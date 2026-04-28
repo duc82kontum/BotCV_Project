@@ -1,6 +1,6 @@
 import Company from "../models/CompanyModel.js";
 import Recruiter from "../models/RecruiterModel.js"; 
-import Job from "../models/JobModel.js"; // Import thêm JobModel để đăng tin
+import Job from "../models/JobModel.js"; 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -9,17 +9,14 @@ export const resgisterCompany = async (req, res) => {
     const { fullName, companyName, email, password } = req.body;
 
     try {
-        // Kiểm tra email tồn tại
         const existingCompany = await Company.findOne({ email });
         if (existingCompany) {
             return res.status(400).json({ success: false, message: "Email này đã được đăng ký doanh nghiệp" });
         }
 
-        // Mã hóa mật khẩu
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // BƯỚC 1: Tạo Company mới (Tài khoản đăng nhập)
         const newCompany = new Company({
             fullName,
             companyName,
@@ -28,8 +25,6 @@ export const resgisterCompany = async (req, res) => {
         });
         await newCompany.save();
 
-        // BƯỚC 2: Tự động tạo Profile Recruiter rỗng liên kết với Company
-        // Điều này cực kỳ quan trọng để lát nữa postJob có cái mà lưu vào MongoDB
         const newRecruiterProfile = new Recruiter({
             companyId: newCompany._id,
             companyName: companyName,
@@ -51,22 +46,18 @@ export const loginCompany = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Tìm Company theo email
         const company = await Company.findOne({ email });
         if (!company) {
             return res.status(404).json({ success: false, message: "Tài khoản doanh nghiệp không tồn tại" });
         }
 
-        // Kiểm tra mật khẩu
         const isMatch = await bcrypt.compare(password, company.password);
         if (!isMatch) {
             return res.status(400).json({ success: false, message: "Mật khẩu không đúng" });
         }
 
-        // Tìm thông tin profile trong bảng Recruiter dựa trên companyId
         const recruiterProfile = await Recruiter.findOne({ companyId: company._id });
 
-        // Tạo JWT Token
         const token = jwt.sign(
             { id: company._id, role: 'recruiter' }, 
             process.env.JWT_SECRET || "your_jwt_secret", 
@@ -112,10 +103,9 @@ export const getCompanyProfile = async (req, res) => {
     }
 };
 
-// 4. CHỨC NĂNG MỚI: Đăng tin tuyển dụng (Post Job)
+// 4. Đăng tin tuyển dụng (Post Job)
 export const postJob = async (req, res) => {
     try {
-        // Hứng dữ liệu từ Frontend gửi lên
         const { 
             title, description, minSalary, maxSalary, negotiable, 
             category, level, type, experiences, time, 
@@ -124,14 +114,12 @@ export const postJob = async (req, res) => {
         
         const companyId = req.company._id; 
 
-        // Tìm Profile Recruiter của công ty này để gắn vào Job
         const recruiterProfile = await Recruiter.findOne({ companyId });
         
         if (!recruiterProfile) {
             return res.status(404).json({ success: false, message: "Không tìm thấy hồ sơ công ty. Vui lòng cập nhật hồ sơ trước khi đăng tin." });
         }
 
-        // Khởi tạo tin mới
         const newJob = new Job({
             title,
             description,
@@ -150,17 +138,54 @@ export const postJob = async (req, res) => {
             slot,
             degree,
             deadline: deadline ? new Date(deadline) : null,
-            recruiter: recruiterProfile._id, // Gắn ID từ bảng Recruiter
-            company: companyId // Gắn ID từ bảng Company
+            recruiter: recruiterProfile._id, 
+            company: companyId 
         });
 
-        // Lưu vào DB
         await newJob.save();
-        
         res.status(201).json({ success: true, message: "Đăng tin tuyển dụng thành công!" });
 
     } catch (error) {
         console.error("Lỗi đăng tin:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 5. Lấy danh sách tin tuyển dụng đã đăng của công ty
+export const getCompanyPostedJobs = async (req, res) => {
+    try {
+        const companyId = req.company._id; 
+        
+        const jobs = await Job.find({ company: companyId }).sort({ createdAt: -1 });
+        
+        res.json({ success: true, jobs });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 6. Thay đổi trạng thái Ẩn/Hiện của tin tuyển dụng
+export const changeJobStatus = async (req, res) => {
+    try {
+        const { id, visible } = req.body;
+        
+        await Job.findByIdAndUpdate(id, { visible });
+        
+        res.json({ success: true, message: visible ? "Đã hiện tin tuyển dụng" : "Đã ẩn tin tuyển dụng" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 7. Xóa tin tuyển dụng
+export const deleteJobs = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        
+        await Job.findByIdAndDelete(id);
+
+        res.json({ success: true, message: "Đã xóa tin tuyển dụng" });
+    } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
