@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from "./pages/Home";
 import ApplyJob from "./pages/ApplyJob"; 
+// SỬA: Đảm bảo đường dẫn này đúng với vị trí file trong thư mục src/pages/
+import Applications from "./pages/Applications"; 
 import Navbar from "./components/Navbar";
 import JobLogin from './components/JobLogin'
 import ProtectedRoute from './components/ProtectedRoute'; 
@@ -17,29 +19,38 @@ const App = () => {
   const [showLogin, setShowLogin] = useState(false)
   const location = useLocation();
 
-  // Kiểm tra xem có đang ở trang Admin hay không để ẩn Navbar hoặc điều chỉnh Padding
+  // Kiểm tra trang Admin để ẩn Navbar
   const isAdminPage = location.pathname.startsWith('/dashboard-admin');
 
   return (
     <div className='min-h-screen bg-white relative'>
       <ToastContainer position="top-right" autoClose={2000} />
 
-      {/* Form đăng ký/đăng nhập User dạng Modal */}
+      {/* Modal đăng nhập */}
       {showLogin && <JobLogin setShowLogin={setShowLogin} />}
 
       <div className='relative z-10'>
-        {/* Chỉ hiện Navbar chính khi không phải trang Admin */}
+        {/* Navbar chỉ hiện ở trang người dùng */}
         {!isAdminPage && <Navbar setShowLogin={setShowLogin} />}
         
-        {/* Điều chỉnh Padding: Trang chủ cần lề, trang Admin cần tràn viền */}
         <div className={isAdminPage ? '' : 'px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'}>
           <Routes>
-            {/* --- PUBLIC ROUTES --- */}
+            {/* --- CÁC TRANG CÔNG KHAI --- */}
             <Route path='/' element={<Home />} />
             <Route path='/apply-job/:id' element={<ApplyJob setShowLogin={setShowLogin} />} />
             <Route path='/recruiter-login' element={<RecruiterLogin />} />
 
-            {/* --- RECRUITER ROUTES --- */}
+            {/* --- TRANG CỦA NGƯỜI DÙNG (Cần đăng nhập) --- */}
+            <Route 
+              path='/applications' 
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <Applications />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* --- TRANG NHÀ TUYỂN DỤNG --- */}
             <Route 
               path='/dashboard' 
               element={
@@ -51,7 +62,7 @@ const App = () => {
               } 
             />
 
-            {/* --- ADMIN ROUTES (Sử dụng Layout lồng nhau) --- */}
+            {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}
             <Route 
               path='/dashboard-admin' 
               element={
@@ -60,16 +71,13 @@ const App = () => {
                 </ProtectedRoute>
               } 
             >
-              {/* Trang con mặc định hiển thị DashBoard */}
               <Route index element={<AdminDashBoard />} />
-              
-              {/* Các trang quản lý nội bộ */}
               <Route path='list-account' element={<div className='p-6 text-xl font-semibold'>Quản lý tài khoản hệ thống</div>} />
               <Route path='list-industry' element={<div className='p-6 text-xl font-semibold'>Quản lý danh mục ngành nghề</div>} />
               <Route path='list-apply' element={<div className='p-6 text-xl font-semibold'>Danh sách hồ sơ ứng tuyển</div>} />
             </Route>
 
-            {/* Route 404 */}
+            {/* Xử lý trang không tồn tại */}
             <Route path='*' element={<div className='py-20 text-center text-gray-400'>404 - Trang không tồn tại</div>} />
           </Routes>
         </div>

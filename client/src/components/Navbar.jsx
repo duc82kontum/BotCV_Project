@@ -24,7 +24,7 @@ const Navbar = ({ setShowLogin }) => {
             <div className='hidden lg:flex items-center gap-6 mr-4 text-sm font-medium text-gray-600'>
               {role === 'user' && (
                 <>
-                  <p onClick={() => navigate('/applied-jobs')} className='cursor-pointer hover:text-blue-600'>Việc đã ứng tuyển</p>
+                  <p onClick={() => navigate('/applications')} className='cursor-pointer hover:text-blue-600'>Việc đã ứng tuyển</p>
                   <p onClick={() => navigate('/saved-jobs')} className='cursor-pointer hover:text-blue-600'>Việc đã lưu</p>
                 </>
               )}
