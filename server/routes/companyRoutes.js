@@ -2,7 +2,8 @@ import express from 'express';
 import { 
     resgisterCompany, 
     loginCompany, 
-    getCompanyProfile 
+    getCompanyProfile,
+    postJob // Import thêm hàm đăng tin
 } from '../controllers/companyController.js';
 import { protectCompany } from '../middleware/authMiddleware.js';
 
@@ -18,5 +19,9 @@ router.post('/login', loginCompany);
 
 // Lấy thông tin hồ sơ công ty (Cần token xác thực)
 router.get('/profile', protectCompany, getCompanyProfile);
+
+// Tuyến đường Đăng tin tuyển dụng mới
+// Khớp với: POST /api/company/post-job
+router.post('/post-job', protectCompany, postJob);
 
 export default router;
