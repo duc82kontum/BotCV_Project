@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String, required: true },
+    savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
     
     // THÊM DÒNG NÀY ĐỂ NODE.JS NHẬN DIỆN ĐƯỢC QUYỀN TRUY CẬP
     role: { type: String, default: "user" }, 

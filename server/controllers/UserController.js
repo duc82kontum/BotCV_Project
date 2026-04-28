@@ -133,3 +133,69 @@ export const getAllUsers = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+export const toggleSaveJob = async (req, res) => {
+    try {
+        const { jobId } = req.body;
+        const userId = req.user.id;
+
+        // Đảm bảo dùng đúng Model là User (viết hoa)
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.json({ success: false, message: "Người dùng không tồn tại" });
+        }
+
+        // PHÒNG NGỪA LỖI: Nếu savedJobs chưa tồn tại, khởi tạo nó là mảng rỗng
+        if (!user.savedJobs) {
+            user.savedJobs = [];
+        }
+
+        const isSaved = user.savedJobs.includes(jobId);
+
+        if (isSaved) {
+            // SỬA TẠI ĐÂY: Dùng optional chaining hoặc kiểm tra trước khi filter
+            user.savedJobs = user.savedJobs.filter(id => id && id.toString() !== jobId);
+            await user.save();
+            return res.json({ success: true, message: "Đã bỏ lưu công việc" });
+        } else {
+            user.savedJobs.push(jobId);
+            await user.save();
+            return res.json({ success: true, message: "Đã lưu công việc" });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+// Kiểm tra xem công việc cụ thể đã được người dùng lưu chưa
+export const checkSavedStatus = async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+        const isSaved = user.savedJobs.includes(jobId);
+
+        res.json({ success: true, saved: isSaved });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// server/controllers/UserController.js
+export const getSavedJobs = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        // Tìm user và nạp chi tiết các công việc trong mảng savedJobs
+        const user = await User.findById(userId).populate({
+            path: 'savedJobs',
+            populate: { path: 'recruiter', select: 'companyName image' } // Lấy thêm thông tin công ty
+        });
+
+        res.json({ success: true, savedJobs: user.savedJobs });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
