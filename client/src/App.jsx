@@ -9,7 +9,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RecruiterLogin from './pages/RecruiterLogin'; 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import SavedJobs from './pages/SavedJobs'; //
+import SavedJobs from './pages/SavedJobs'; 
+
+// IMPORT CÁC TRANG CỦA NHÀ TUYỂN DỤNG (RECRUITER)
+import Dashboard from './pages/Recuiter/Dashboard';
+import DashboardHome from './pages/Recuiter/DashboardHome';
+import ViewApplication from './pages/Recuiter/ViewApplication';
+import AddJob from './pages/Recuiter/AddJob'; // <-- ĐÃ THÊM IMPORT TRANG ĐĂNG TIN
 
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
@@ -19,8 +25,8 @@ const App = () => {
   const [showLogin, setShowLogin] = useState(false)
   const location = useLocation();
 
-  // Kiểm tra trang Admin để ẩn Navbar
-  const isAdminPage = location.pathname.startsWith('/dashboard-admin');
+  // Kiểm tra để ẩn Navbar mặc định ở các trang quản trị (Admin & Recruiter)
+  const isHiddenNavbar = location.pathname.startsWith('/dashboard-admin') || location.pathname.startsWith('/dashboard');
 
   return (
     <div className='min-h-screen bg-white relative'>
@@ -30,10 +36,10 @@ const App = () => {
       {showLogin && <JobLogin setShowLogin={setShowLogin} />}
 
       <div className='relative z-10'>
-        {/* Navbar chỉ hiện ở trang người dùng */}
-        {!isAdminPage && <Navbar setShowLogin={setShowLogin} />}
+        {/* Navbar chỉ hiện ở trang người dùng chung */}
+        {!isHiddenNavbar && <Navbar setShowLogin={setShowLogin} />}
         
-        <div className={isAdminPage ? '' : 'px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'}>
+        <div className={isHiddenNavbar ? '' : 'px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'}>
           <Routes>
             {/* --- CÁC TRANG CÔNG KHAI --- */}
             <Route path='/' element={<Home />} />
@@ -50,7 +56,6 @@ const App = () => {
               } 
             />
 
-            {/* ROUTE MỚI: Việc làm đã lưu */}
             <Route 
               path='/saved-jobs' 
               element={
@@ -65,12 +70,15 @@ const App = () => {
               path='/dashboard' 
               element={
                 <ProtectedRoute allowedRoles={['recruiter']}>
-                  <div className="py-10 text-2xl font-bold text-blue-600 text-center">
-                    Trang quản lý của Nhà tuyển dụng (Sắp ra mắt)
-                  </div>
+                  <Dashboard />
                 </ProtectedRoute>
               } 
-            />
+            >
+              {/* Nested Routes: Các trang con sẽ được render vào thẻ <Outlet /> của Dashboard */}
+              <Route index element={<DashboardHome />} />
+              <Route path='view-applications' element={<ViewApplication />} />
+              <Route path='add-job' element={<AddJob />} /> {/* <-- ĐÃ THÊM ROUTE ĐĂNG TIN */}
+            </Route>
 
             {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}
             <Route 
