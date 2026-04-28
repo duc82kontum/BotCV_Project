@@ -11,6 +11,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
+import BackButton from '../components/BackButton'; // Import component vừa tạo
 
 dayjs.extend(relativeTime);
 dayjs.locale("vi");
@@ -129,6 +130,7 @@ const fetchJobDetail = async () => {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 animate-fadeIn">
+      <BackButton className="mb-4" />
       <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start">
         <div className="w-28 h-28 border-2 border-gray-50 rounded-2xl flex items-center justify-center bg-white overflow-hidden shadow-inner p-2">
           {getLogoUrl() ? (

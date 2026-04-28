@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; // Thêm useNavigate để điều hướng
 import { AppContext } from '../context/AppContext';
+import BackButton from '../components/BackButton'; // Import component vừa tạo
+
 
 const Applications = () => {
   const navigate = useNavigate(); // Khởi tạo hàm điều hướng
@@ -58,6 +60,7 @@ const Applications = () => {
 
   return (
     <div className="container mx-auto p-4 py-10 min-h-[65vh]">
+      <BackButton className="mb-4" />
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Việc làm đã ứng tuyển</h2>
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
         <table className="w-full text-left border-collapse">
