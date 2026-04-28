@@ -4,14 +4,14 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Typography, CircularProgress 
 } from "@mui/material";
-import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle } from "lucide-react";
+import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle, Heart } from "lucide-react"; // Thêm Heart icon
 import axios from "axios";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
-import BackButton from '../components/BackButton'; // Import component vừa tạo
+import BackButton from '../components/BackButton'; 
 
 dayjs.extend(relativeTime);
 dayjs.locale("vi");
@@ -24,13 +24,12 @@ const ApplyJob = ({ setShowLogin }) => {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openCancel, setOpenCancel] = useState(false); 
   const [isApplied, setIsApplied] = useState(false); 
-  const [applicationId, setApplicationId] = useState(null); // Lưu ID đơn ứng tuyển thực tế
+  const [isSaved, setIsSaved] = useState(false); // State lưu trạng thái đã lưu hay chưa
+  const [applicationId, setApplicationId] = useState(null); 
   
   const { backendUrl, token, userData, role, fetchApplyCount } = useContext(AppContext);
 
-  // Hàm tải dữ liệu chi tiết công việc và trạng thái ứng tuyển
-  //
-const fetchJobDetail = async () => {
+  const fetchJobDetail = async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${backendUrl}/api/jobs/${id}`);
@@ -39,31 +38,52 @@ const fetchJobDetail = async () => {
       }
 
       if (token && role === 'user') {
+        // Kiểm tra trạng thái ứng tuyển
         const appliedRes = await axios.get(`${backendUrl}/api/apply/check-applied/${id}`, {
           headers: { token }
         });
         
         setIsApplied(appliedRes.data.applied);
         
-        // SỬA TẠI ĐÂY: Thử cả 2 cách lấy ID phổ biến để đảm bảo không bị null
         if (appliedRes.data.applied) {
           const appId = appliedRes.data.application?._id || appliedRes.data.applicationId;
           setApplicationId(appId);
-          console.log("Đã tìm thấy ID đơn ứng tuyển:", appId); // Dòng này giúp bạn kiểm tra trong Console (F12)
         } else {
           setApplicationId(null);
         }
+
+        // LOGIC: Kiểm tra xem công việc này đã được lưu chưa
+        const savedRes = await axios.get(`${backendUrl}/api/user/check-saved/${id}`, {
+          headers: { token }
+        });
+        setIsSaved(savedRes.data.saved);
       }
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
     } finally {
       setLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchJobDetail();
   }, [id, backendUrl, token, role]);
+
+  // Logic xử lý Lưu/Bỏ lưu công việc
+  const handleSaveJob = async () => {
+    if (!token) return setShowLogin(true);
+    try {
+      const res = await axios.post(`${backendUrl}/api/user/save-job`, { jobId: id }, {
+        headers: { token }
+      });
+      if (res.data.success) {
+        setIsSaved(!isSaved);
+        toast.success(isSaved ? "Đã bỏ lưu công việc" : "Lưu công việc thành công!");
+      }
+    } catch (error) {
+      toast.error("Thao tác lưu thất bại");
+    }
+  };
 
   const handleConfirmApply = async () => {
     try {
@@ -77,11 +97,8 @@ const fetchJobDetail = async () => {
         toast.success("Ứng tuyển thành công!");
         setIsApplied(true);
         setOpenConfirm(false);
-        
-        // CẬP NHẬT: Phải đợi nạp lại dữ liệu để lấy applicationId mới từ Database
         await fetchJobDetail(); 
-        
-        fetchApplyCount(); // Cập nhật số lượng trên Navbar
+        fetchApplyCount(); 
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Lỗi ứng tuyển");
@@ -89,13 +106,11 @@ const fetchJobDetail = async () => {
   };
 
   const handleConfirmCancel = async () => {
-    // Kiểm tra mã đơn trước khi gọi API xóa
     if (!applicationId) {
         return toast.error("Không tìm thấy mã đơn ứng tuyển để hủy! Vui lòng thử lại.");
     }
 
     try {
-      // Gọi API xóa theo ID đơn ứng tuyển giống trang Applications
       const res = await axios.delete(`${backendUrl}/api/apply/delete/${applicationId}`, {
         headers: { token }
       });
@@ -105,7 +120,7 @@ const fetchJobDetail = async () => {
         setIsApplied(false);
         setApplicationId(null);
         setOpenCancel(false);
-        fetchApplyCount(); // Cập nhật lại số lượng trên Navbar ngay lập tức
+        fetchApplyCount(); 
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Không thể hủy đơn lúc này");
@@ -183,6 +198,22 @@ const fetchJobDetail = async () => {
               ỨNG TUYỂN NGAY
             </button>
           )}
+
+          {/* NÚT LƯU CÔNG VIỆC THÊM MỚI */}
+          <button 
+            onClick={handleSaveJob}
+            className={`w-full py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all border shadow-sm active:scale-95 ${
+              isSaved 
+              ? "bg-orange-50 text-orange-600 border-orange-200" 
+              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            {isSaved ? (
+              <><Heart size={20} fill="currentColor" /> ĐÃ LƯU</>
+            ) : (
+              <><Heart size={20} /> LƯU CÔNG VIỆC</>
+            )}
+          </button>
         </div>
       </div>
 

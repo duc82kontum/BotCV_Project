@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from "./pages/Home";
 import ApplyJob from "./pages/ApplyJob"; 
-// SỬA: Đảm bảo đường dẫn này đúng với vị trí file trong thư mục src/pages/
 import Applications from "./pages/Applications"; 
 import Navbar from "./components/Navbar";
 import JobLogin from './components/JobLogin'
@@ -10,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RecruiterLogin from './pages/RecruiterLogin'; 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import SavedJobs from './pages/SavedJobs'; //
 
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
@@ -46,6 +46,16 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={['user']}>
                   <Applications />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* ROUTE MỚI: Việc làm đã lưu */}
+            <Route 
+              path='/saved-jobs' 
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <SavedJobs />
                 </ProtectedRoute>
               } 
             />
