@@ -39,7 +39,7 @@ const Navbar = ({ setShowLogin }) => {
                     onClick={() => navigate('/applications')} 
                     className='relative cursor-pointer hover:text-blue-600 flex items-center gap-1 transition-colors'
                   >
-                    <span>Việc đã ứng tuyển</span>
+                    <span>Việc đang ứng tuyển</span>
                     
                     {/* Badge số lượng đơn ứng tuyển */}
                     {applyCount > 0 && (

@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Typography, CircularProgress 
 } from "@mui/material";
-import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle, Heart } from "lucide-react"; 
+import { Clock, MapPin, Briefcase, DollarSign, Building2, CheckCircle, XCircle, Heart, Loader2 } from "lucide-react"; 
 import axios from "axios";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -27,7 +27,6 @@ const ApplyJob = ({ setShowLogin }) => {
   const [isSaved, setIsSaved] = useState(false); 
   const [applicationId, setApplicationId] = useState(null); 
   
-  // ĐƯA VÀO ĐÂY: Tất cả logic lấy từ Context phải nằm trong thân Component
   const { 
     backendUrl, 
     token, 
@@ -46,7 +45,6 @@ const ApplyJob = ({ setShowLogin }) => {
       }
 
       if (token && role === 'user') {
-        // Kiểm tra trạng thái ứng tuyển
         const appliedRes = await axios.get(`${backendUrl}/api/apply/check-applied/${id}`, {
           headers: { token }
         });
@@ -60,7 +58,6 @@ const ApplyJob = ({ setShowLogin }) => {
           setApplicationId(null);
         }
 
-        // Kiểm tra trạng thái lưu công việc
         const savedRes = await axios.get(`${backendUrl}/api/user/check-saved/${id}`, {
           headers: { token }
         });
@@ -77,7 +74,6 @@ const ApplyJob = ({ setShowLogin }) => {
     fetchJobDetail();
   }, [id, backendUrl, token, role]);
 
-  // Logic xử lý Lưu/Bỏ lưu công việc
   const handleSaveJob = async () => {
     if (!token) return setShowLogin(true);
     try {
@@ -86,7 +82,6 @@ const ApplyJob = ({ setShowLogin }) => {
       });
       if (res.data.success) {
         setIsSaved(!isSaved);
-        // Cập nhật con số trên Navbar ngay lập tức
         fetchSavedCount(); 
         toast.success(isSaved ? "Đã bỏ lưu công việc" : "Lưu công việc thành công!");
       }
@@ -95,11 +90,20 @@ const ApplyJob = ({ setShowLogin }) => {
     }
   };
 
+  // CẬP NHẬT: Gửi dữ liệu theo cấu trúc mới
   const handleConfirmApply = async () => {
     try {
       const res = await axios.post(
         `${backendUrl}/api/apply/add`, 
-        { jobId: id },
+        { 
+          jobId: id,
+          companyId: job.recruiter?._id, // Đảm bảo lấy đúng ID nhà tuyển dụng
+          userCvUrl: userData?.cvUrl || "default_cv_path.pdf", // Sử dụng CV từ profile hoặc mặc định
+          statusCussess: "Đã ứng tuyển",
+          statusDenied: "Không được duyệt",
+          statusWaiting: "Đang chờ duyệt",
+          status: "Đang chờ duyệt" // Trạng thái mặc định để hiển thị
+        },
         { headers: { token } }
       );
 
@@ -190,8 +194,8 @@ const ApplyJob = ({ setShowLogin }) => {
         <div className="flex flex-col gap-3 w-full md:w-auto min-w-[200px]">
           {isApplied ? (
             <>
-              <div className="bg-green-50 text-green-700 border border-green-200 py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm">
-                <CheckCircle size={20} /> ĐÃ ỨNG TUYỂN
+              <div className="bg-amber-50 text-amber-700 border border-amber-200 py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm">
+                <Loader2 size={20} className="animate-spin" /> ĐANG ỨNG TUYỂN
               </div>
               <button 
                 onClick={() => setOpenCancel(true)}
