@@ -24,11 +24,10 @@ export const registerUser = async (req, res) => {
             email,
             password: hashedPasswordFinal,
             phone,
-            role: "user" // Mặc định là user
+            role: "user" 
         });
 
         const user = await newUser.save();
-
 
         const token = jwt.sign(
             { id: String(user._id), role: user.role }, 
@@ -40,122 +39,118 @@ export const registerUser = async (req, res) => {
             success: true, 
             token, 
             role: user.role,
-            user: { id: user._id, name: user.name, email: user.email } 
+            user: { id: user._id, name: user.name, email: user.email }
         });
-
     } catch (error) {
+        console.log(error);
         res.json({ success: false, message: error.message });
     }
-}
+};
 
-// 2. ĐĂNG NHẬP NGƯỜI DÙNG (Tự động nhận diện Admin/User)
+// 2. ĐĂNG NHẬP NGƯỜI DÙNG
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        
-        // Tìm user và log để kiểm tra role ngay tại đây
         const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.json({ success: false, message: "Người dùng không tồn tại!" });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        
-        if (isMatch) {
-            // Lấy role thật từ DB, nếu trống thì mới để 'user'
-            const userRole = user.role || 'user'; 
-
-            const token = jwt.sign(
-                { id: String(user._id), role: userRole }, 
-                process.env.JWT_SECRET, 
-                { expiresIn: '30d' }
-            );
-            
-            res.json({ 
-                success: true, 
-                token, 
-                role: userRole,
-                user: { id: user._id, name: user.name, email: user.email, role: userRole } 
-            });
-        } else {
-            res.json({ success: false, message: "Mật khẩu không chính xác!" });
-        }
-
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-}
-
-// 3. LẤY THÔNG TIN CÁ NHÂN (GET PROFILE)
-export const getProfileUser = async (req, res) => {
-    try {
-        const userId = req.user?.id || req.userId;
-        const user = await User.findById(userId).select('-password');
-
-        if (!user) {
-            return res.json({ success: false, message: "Không tìm thấy người dùng!" });
-        }
-
-        res.json({ 
-            success: true, 
-            user: { ...user._doc, role: user.role || 'user' }
-        });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-}
-
-// 4. CẬP NHẬT HỒ SƠ NGƯỜI DÙNG
-export const updateProfileUser = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { name, phone, address, degree, field } = req.body;
-
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { name, phone, address, degree, field },
-            { new: true }
-        ).select('-password');
-
-        res.json({ success: true, message: "Cập nhật hồ sơ thành công", user: updatedUser });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-}
-
-// 5. [DÀNH CHO ADMIN] LẤY DANH SÁCH TẤT CẢ NGƯỜI DÙNG
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find({}).select('-password').sort({ createdAt: -1 });
-        res.json({ success: true, users });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-}
-
-export const toggleSaveJob = async (req, res) => {
-    try {
-        const { jobId } = req.body;
-        const userId = req.user.id;
-
-        // Đảm bảo dùng đúng Model là User (viết hoa)
-        const user = await User.findById(userId);
 
         if (!user) {
             return res.json({ success: false, message: "Người dùng không tồn tại" });
         }
 
-        // PHÒNG NGỪA LỖI: Nếu savedJobs chưa tồn tại, khởi tạo nó là mảng rỗng
-        if (!user.savedJobs) {
-            user.savedJobs = [];
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (isMatch) {
+            const token = jwt.sign(
+                { id: String(user._id), role: user.role }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '30d' }
+            );
+            res.json({ 
+                success: true, 
+                token, 
+                role: user.role,
+                user: { id: user._id, name: user.name, email: user.email }
+            });
+        } else {
+            res.json({ success: false, message: "Mật khẩu không chính xác" });
+        }
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// 3. LẤY THÔNG TIN CÁ NHÂN
+export const getProfileUser = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user; 
+        const userData = await User.findById(userId).select('-password');
+        res.json({ success: true, userData });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// 4. CẬP NHẬT HỒ SƠ (Đã hỗ trợ upload cả Avatar và CV)
+export const updateProfileUser = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user; 
+        const { name, phone, degree, field, level, address } = req.body;
+        
+        const updatedData = {
+            ...(name && { name }),
+            ...(phone && { phone }),
+            ...(degree && { degree }),
+            ...(field && { field }),
+            ...(level && { level }),
+            ...(address && { address }),
+        };
+
+        // Xử lý upload nhiều file
+        if (req.files) {
+            // Nếu có upload ảnh đại diện mới
+            if (req.files.image) {
+                updatedData.image = `/uploads/avatar/${req.files.image[0].filename}`;
+            }
+            // Nếu có upload CV mới
+            if (req.files.cvFile) {
+                updatedData.cvUrl = `/uploads/cv/${req.files.cvFile[0].filename}`;
+            }
         }
 
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            updatedData, 
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Cập nhật hồ sơ thành công", 
+            user: updatedUser 
+        });
+    } catch (error) {
+        console.error("Lỗi cập nhật:", error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// 5. LƯU / BỎ LƯU CÔNG VIỆC
+export const toggleSaveJob = async (req, res) => {
+    try {
+        const { jobId } = req.body;
+        const userId = req.user.id || req.user;
+
+        const user = await User.findById(userId);
         const isSaved = user.savedJobs.includes(jobId);
 
         if (isSaved) {
-            // SỬA TẠI ĐÂY: Dùng optional chaining hoặc kiểm tra trước khi filter
-            user.savedJobs = user.savedJobs.filter(id => id && id.toString() !== jobId);
+            user.savedJobs = user.savedJobs.filter(id => id.toString() !== jobId);
             await user.save();
             return res.json({ success: true, message: "Đã bỏ lưu công việc" });
         } else {
@@ -163,17 +158,16 @@ export const toggleSaveJob = async (req, res) => {
             await user.save();
             return res.json({ success: true, message: "Đã lưu công việc" });
         }
-
     } catch (error) {
-        console.log(error);
         res.json({ success: false, message: error.message });
     }
 };
-// Kiểm tra xem công việc cụ thể đã được người dùng lưu chưa
+
+// 6. KIỂM TRA TRẠNG THÁI LƯU
 export const checkSavedStatus = async (req, res) => {
     try {
         const { jobId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user.id || req.user;
 
         const user = await User.findById(userId);
         const isSaved = user.savedJobs.includes(jobId);
@@ -184,18 +178,28 @@ export const checkSavedStatus = async (req, res) => {
     }
 };
 
-// server/controllers/UserController.js
+// 7. LẤY DANH SÁCH VIỆC ĐÃ LƯU
 export const getSavedJobs = async (req, res) => {
     try {
-        const userId = req.user.id;
-        // Tìm user và nạp chi tiết các công việc trong mảng savedJobs
+        const userId = req.user.id || req.user;
         const user = await User.findById(userId).populate({
             path: 'savedJobs',
-            populate: { path: 'recruiter', select: 'companyName image' } // Lấy thêm thông tin công ty
+            populate: { path: 'recruiter', select: 'name email' }
         });
 
         res.json({ success: true, savedJobs: user.savedJobs });
     } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// 8. [DÀNH CHO ADMIN] LẤY DANH SÁCH TẤT CẢ NGƯỜI DÙNG
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+        res.json({ success: true, users });
+    } catch (error) {
+        console.log(error);
         res.json({ success: false, message: error.message });
     }
 };

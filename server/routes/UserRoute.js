@@ -1,22 +1,43 @@
 import express from "express";
-import { registerUser, loginUser, getProfileUser, toggleSaveJob, checkSavedStatus, getSavedJobs } from "../controllers/UserController.js";
+import { 
+    registerUser, 
+    loginUser, 
+    getProfileUser, 
+    updateProfileUser, 
+    toggleSaveJob, 
+    checkSavedStatus, 
+    getSavedJobs,
+    getAllUsers 
+} from "../controllers/UserController.js";
 import authUser from "../middleware/authMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const userRouter = express.Router();
 
+// 1. AUTHENTICATION (Đăng ký & Đăng nhập)
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 
-// Lấy dữ liệu cá nhân
+// 2. PROFILE (Thông tin cá nhân & Cập nhật hồ sơ kèm CV và Avatar)
 userRouter.get("/get-profile", authUser, getProfileUser);
 
-// --- FIX LỖI 404 TẠI ĐÂY ---
-// Định nghĩa cả 2 tên miền để hỗ trợ đồng thời AppContext.jsx và SavedJobs.jsx
-userRouter.get('/get-saved-jobs', authUser, getSavedJobs); // Dành cho AppContext.jsx gọi đếm số lượng
-userRouter.get('/saved-jobs', authUser, getSavedJobs);     // Dành cho SavedJobs.jsx gọi danh sách chi tiết
+// ĐÃ CẬP NHẬT: Sử dụng upload.fields để nhận nhiều file cùng lúc (image và cvFile)
+userRouter.put("/update-profile", authUser, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'cvFile', maxCount: 1 }
+]), updateProfileUser);
 
-// Lưu việc làm
+// 3. SAVED JOBS (Lưu và quản lý việc làm)
+// Hỗ trợ cả 2 endpoint để tránh lỗi 404 từ AppContext và SavedJobs.jsx
+const savedJobsRoutes = ['/get-saved-jobs', '/saved-jobs'];
+savedJobsRoutes.forEach(path => {
+    userRouter.get(path, authUser, getSavedJobs);
+});
+
 userRouter.post('/save-job', authUser, toggleSaveJob);
 userRouter.get('/check-saved/:jobId', authUser, checkSavedStatus);
+
+// 4. ADMIN ONLY (Lấy danh sách người dùng)
+userRouter.get("/all-users", authUser, getAllUsers);
 
 export default userRouter;
