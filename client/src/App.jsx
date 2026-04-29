@@ -10,6 +10,8 @@ import RecruiterLogin from './pages/RecruiterLogin';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SavedJobs from './pages/SavedJobs'; 
+import Profile from './pages/Profile'
+import ViewProfile from './pages/ViewProfile' // IMPORT TRANG XEM HỒ SƠ
 
 // IMPORT CÁC TRANG CỦA NHÀ TUYỂN DỤNG (RECRUITER)
 import Dashboard from './pages/Recuiter/Dashboard';
@@ -17,7 +19,7 @@ import DashboardHome from './pages/Recuiter/DashboardHome';
 import ViewApplication from './pages/Recuiter/ViewApplication';
 import AddJob from './pages/Recuiter/AddJob'; 
 import ManageJobs from './pages/Recuiter/ManageJobs';
-import CompanyProfile from './pages/Recuiter/CompanyProfile'; // <-- THÊM IMPORT TRANG HỒ SƠ CÔNG TY
+import CompanyProfile from './pages/Recuiter/CompanyProfile';
 
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
@@ -58,6 +60,20 @@ const App = () => {
               </ProtectedRoute>
             } />
 
+            {/* --- ROUTE CHO TRANG XEM HỒ SƠ --- */}
+            <Route path='/profile' element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <ViewProfile />
+              </ProtectedRoute>
+            } />
+
+            {/* --- ROUTE CHO TRANG SỬA HỒ SƠ --- */}
+            <Route path='/edit-profile' element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <Profile />
+              </ProtectedRoute>
+            } />
+
             {/* Tuyến đường dành cho Nhà tuyển dụng đăng nhập */}
             <Route path='/recruiter-login' element={<RecruiterLogin />} />
 
@@ -75,7 +91,7 @@ const App = () => {
               <Route path='view-applications' element={<ViewApplication />} />
               <Route path='add-job' element={<AddJob />} /> 
               <Route path='manage-jobs' element={<ManageJobs />} />
-              <Route path='company-profile' element={<CompanyProfile />} /> {/* <-- ROUTE CẬP NHẬT HỒ SƠ */}
+              <Route path='company-profile' element={<CompanyProfile />} />
             </Route>
 
             {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}

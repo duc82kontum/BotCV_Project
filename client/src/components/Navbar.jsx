@@ -100,9 +100,14 @@ const Navbar = ({ setShowLogin }) => {
                     )}
 
                     {role === 'user' && (
-                      <p onClick={() => navigate('/profile')} className='px-4 py-3 hover:bg-blue-50 text-gray-700 cursor-pointer text-sm font-medium border-b border-gray-50'>
-                        Hồ sơ cá nhân
-                      </p>
+                      <>
+                        <p onClick={() => navigate('/profile')} className='px-4 py-3 hover:bg-blue-50 text-gray-700 cursor-pointer text-sm font-medium border-b border-gray-50'>
+                          Hồ sơ cá nhân
+                        </p>
+                        <p onClick={() => navigate('/edit-profile')} className='px-4 py-3 hover:bg-blue-50 text-gray-700 cursor-pointer text-sm font-medium border-b border-gray-50'>
+                          Cập nhật hồ sơ
+                        </p>
+                      </>
                     )}
 
                     {/* Nút đăng xuất chung */}
