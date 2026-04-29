@@ -16,7 +16,8 @@ import Dashboard from './pages/Recuiter/Dashboard';
 import DashboardHome from './pages/Recuiter/DashboardHome';
 import ViewApplication from './pages/Recuiter/ViewApplication';
 import AddJob from './pages/Recuiter/AddJob'; 
-import ManageJobs from './pages/Recuiter/ManageJobs'; // <-- IMPORT TRANG QUẢN LÝ TIN ĐĂNG
+import ManageJobs from './pages/Recuiter/ManageJobs';
+import CompanyProfile from './pages/Recuiter/CompanyProfile'; // <-- THÊM IMPORT TRANG HỒ SƠ CÔNG TY
 
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
@@ -31,42 +32,36 @@ const App = () => {
 
   return (
     <div className='min-h-screen bg-white relative'>
-      <ToastContainer position="top-right" autoClose={2000} />
-
-      {/* Modal đăng nhập */}
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       {showLogin && <JobLogin setShowLogin={setShowLogin} />}
-
-      <div className='relative z-10'>
-        {/* Navbar chỉ hiện ở trang người dùng chung */}
-        {!isHiddenNavbar && <Navbar setShowLogin={setShowLogin} />}
-        
-        <div className={isHiddenNavbar ? '' : 'px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'}>
+      
+      {/* Chỉ hiển thị Navbar nếu không phải trang Dashboard */}
+      {!isHiddenNavbar && <Navbar setShowLogin={setShowLogin} />}
+      
+      <div className={!isHiddenNavbar ? 'container px-4 2xl:px-20 mx-auto' : ''}>
+        <div className='flex flex-col min-h-screen'>
           <Routes>
-            {/* --- CÁC TRANG CÔNG KHAI --- */}
             <Route path='/' element={<Home />} />
-            <Route path='/apply-job/:id' element={<ApplyJob setShowLogin={setShowLogin} />} />
+            <Route path='/apply-job/:id' element={<ApplyJob />} />
+            
+            {/* Tuyến đường bảo vệ cho Người tìm việc */}
+            <Route path='/applications' element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <Applications />
+              </ProtectedRoute>
+            } />
+
+            <Route path='/saved-jobs' element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <SavedJobs />
+              </ProtectedRoute>
+            } />
+
+            {/* Tuyến đường dành cho Nhà tuyển dụng đăng nhập */}
             <Route path='/recruiter-login' element={<RecruiterLogin />} />
 
-            {/* --- TRANG CỦA NGƯỜI DÙNG (Cần đăng nhập) --- */}
-            <Route 
-              path='/applications' 
-              element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <Applications />
-                </ProtectedRoute>
-              } 
-            />
-
-            <Route 
-              path='/saved-jobs' 
-              element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <SavedJobs />
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* --- TRANG NHÀ TUYỂN DỤNG --- */}
+            {/* --- TRANG QUẢN TRỊ NHÀ TUYỂN DỤNG (RECRUITER DASHBOARD) --- */}
             <Route 
               path='/dashboard' 
               element={
@@ -79,7 +74,8 @@ const App = () => {
               <Route index element={<DashboardHome />} />
               <Route path='view-applications' element={<ViewApplication />} />
               <Route path='add-job' element={<AddJob />} /> 
-              <Route path='manage-jobs' element={<ManageJobs />} /> {/* <-- ĐÃ THÊM ROUTE QUẢN LÝ TIN */}
+              <Route path='manage-jobs' element={<ManageJobs />} />
+              <Route path='company-profile' element={<CompanyProfile />} /> {/* <-- ROUTE CẬP NHẬT HỒ SƠ */}
             </Route>
 
             {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}
