@@ -189,3 +189,55 @@ export const deleteJobs = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// 8. Cập nhật profile công ty
+export const updateCompanyProfile = async (req, res) => {
+    try {
+        const companyId = req.company._id;
+        
+        // Nhận đúng các trường dữ liệu từ Frontend
+        const { companyName, namemanage, phone, website, address, employees, description } = req.body;
+        
+        // Lấy file ảnh từ middleware multer
+        const imageFile = req.file; 
+
+        // 1. Cập nhật tên công ty ở bảng Company chính
+        const updatedCompany = await Company.findByIdAndUpdate(companyId, {
+            companyName
+        }, { new: true });
+
+        // 2. Gom dữ liệu để cập nhật vào bảng Recruiter
+        const updateData = {
+            companyName,
+            namemanage,
+            phone,
+            website,
+            address,
+            employees,
+            description,
+        };
+
+        // Nếu người dùng có tải ảnh mới lên
+        if (imageFile) {
+            // LƯU Ý BƯỚC 4: Chỉ lưu đường dẫn web tương đối thay vì imageFile.path (ổ C:/)
+            updateData.logo = `/uploads/${imageFile.filename}`; 
+            updateData.image = `/uploads/${imageFile.filename}`; 
+        }
+
+        // 3. Thực hiện lưu vào Database
+        const profile = await Recruiter.findOneAndUpdate(
+            { companyId },
+            updateData,
+            { upsert: true, new: true }
+        );
+
+        res.json({ 
+            success: true, 
+            message: "Cập nhật hồ sơ thành công!", 
+            userData: { ...updatedCompany._doc, profile } 
+        });
+    } catch (error) {
+        console.error("Lỗi cập nhật hồ sơ:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
