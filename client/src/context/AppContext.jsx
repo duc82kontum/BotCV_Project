@@ -53,18 +53,21 @@ export const AppContextProvider = (props) => {
 
     // 4. QUAN TRỌNG: Hàm nạp lại Profile khi Reload trang
     const loadUserProfileData = async () => {
+        if (!token || !role) return;
+
         try {
-            // Xác định đúng đường dẫn API dựa trên Role
-            const endpoint = role === 'recruiter' 
-                ? '/api/company/profile' // API lấy thông tin nhà tuyển dụng
-                : '/api/user/get-profile'; // API lấy thông tin ứng viên
+            // Xác định đúng đường dẫn API dựa trên Role (Hỗ trợ Admin, User và Recruiter)
+            const endpoint = (role === 'admin' || role === 'user') 
+                ? '/api/user/get-profile' // API lấy thông tin ứng viên (hoặc admin)
+                : '/api/company/profile'; // API lấy thông tin nhà tuyển dụng
 
             const { data } = await axios.get(backendUrl + endpoint, { 
                 headers: { token } 
             });
 
             if (data.success) {
-                setUserData(data.userData);
+                // ĐÃ FIX: Nhận diện cả 'user' (từ UserController) và 'userData' (từ companyController)
+                setUserData(data.user || data.userData);
             } else {
                 logout(); // Nếu token không hợp lệ thì đá ra
             }
