@@ -25,7 +25,7 @@ adminRouter.get("/applications", protectAdmin, getAllApplicationsAdmin);
 adminRouter.delete("/delete-application/:id", protectAdmin, deleteApplicationAdmin);
 
 // ================= ROUTE CHO QUẢN LÝ NGÀNH NGHỀ =================
-adminRouter.get("/list-industry", protectAdmin, getIndustry);
+adminRouter.get("/list-industry", getIndustry);
 adminRouter.post("/add-industry", protectAdmin, addIndustry);
 adminRouter.delete("/delete-industry/:id", protectAdmin, deleteIndustry);
 
