@@ -11,40 +11,27 @@ const ApplySchema = new mongoose.Schema({
         ref: "Job", 
         required: true 
     },
+    // Tham chiếu đến model "Company" để khớp với logic trong authMiddleware.js
     companyId: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: "Recruiter", 
+        ref: "Company", 
         required: true 
     },
     userCvUrl: { 
         type: String, 
         required: true 
-    }, // Lưu đường dẫn file CV
-    date: { 
-        type: Date, 
-        default: Date.now 
-    },
+    }, // Đường dẫn file CV ứng viên đã tải lên
     
-    // Cập nhật các trường trạng thái theo cấu trúc dữ liệu mới
-    statusCussess: { 
-        type: String, 
-        default: "Đã ứng tuyển" 
-    },
-    statusDenied: { 
-        type: String, 
-        default: "Không được duyệt" 
-    },
-    statusWaiting: { 
-        type: String, 
-        default: "Đang chờ duyệt" 
-    },
-    
-    // Thêm một trường status chung để dễ dàng quản lý logic hiển thị nếu cần
+    // Sử dụng một trường status duy nhất cho các trạng thái: 
+    // "Đang chờ duyệt", "Đã xem", "Chờ phỏng vấn", "Từ chối"
     status: {
         type: String,
         default: "Đang chờ duyệt"
     }
-}, { timestamps: true });
+}, { 
+    timestamps: true // Tự động tạo và cập nhật createdAt, updatedAt
+});
 
 const Apply = mongoose.models.Apply || mongoose.model("Apply", ApplySchema);
+
 export default Apply;
