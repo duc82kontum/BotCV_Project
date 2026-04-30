@@ -24,6 +24,9 @@ import CompanyProfile from './pages/Recuiter/CompanyProfile';
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
 import AdminDashBoard from './pages/Admin/AdminDashBoard';
+import AdminListAccount from './pages/Admin/AdminListAccount'; // Thêm mới
+import AdminListIndustry from './pages/Admin/AdminListIndustry'; // Thêm mới
+import AdminListApply from './pages/Admin/AdminListApply'; // Thêm mới
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
@@ -104,9 +107,10 @@ const App = () => {
               } 
             >
               <Route index element={<AdminDashBoard />} />
-              <Route path='list-account' element={<div className='p-6 text-xl font-semibold'>Quản lý tài khoản hệ thống</div>} />
-              <Route path='list-industry' element={<div className='p-6 text-xl font-semibold'>Quản lý danh mục ngành nghề</div>} />
-              <Route path='list-apply' element={<div className='p-6 text-xl font-semibold'>Danh sách hồ sơ ứng tuyển</div>} />
+              {/* ĐÃ THAY THẾ CÁC THẺ DIV BẰNG COMPONENT THỰC TẾ */}
+              <Route path='list-account' element={<AdminListAccount />} />
+              <Route path='list-industry' element={<AdminListIndustry />} />
+              <Route path='list-apply' element={<AdminListApply />} />
             </Route>
 
             {/* Xử lý trang không tồn tại */}
