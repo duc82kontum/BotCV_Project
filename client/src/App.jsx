@@ -11,7 +11,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SavedJobs from './pages/SavedJobs'; 
 import Profile from './pages/Profile'
-import ViewProfile from './pages/ViewProfile' // IMPORT TRANG XEM HỒ SƠ
+import ViewProfile from './pages/ViewProfile' 
+import Footer from "./components/Footer"; // Import Footer đã có[cite: 24]
 
 // IMPORT CÁC TRANG CỦA NHÀ TUYỂN DỤNG (RECRUITER)
 import Dashboard from './pages/Recuiter/Dashboard';
@@ -24,33 +25,33 @@ import CompanyProfile from './pages/Recuiter/CompanyProfile';
 // IMPORT CÁC TRANG ADMIN
 import AdminHome from './pages/Admin/AdminHome';
 import AdminDashBoard from './pages/Admin/AdminDashBoard';
-import AdminListAccount from './pages/Admin/AdminListAccount'; // Thêm mới
-import AdminListIndustry from './pages/Admin/AdminListIndustry'; // Thêm mới
-import AdminListApply from './pages/Admin/AdminListApply'; // Thêm mới
+import AdminListAccount from './pages/Admin/AdminListAccount'; 
+import AdminListIndustry from './pages/Admin/AdminListIndustry'; 
+import AdminListApply from './pages/Admin/AdminListApply'; 
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
   const location = useLocation();
 
-  // Kiểm tra để ẩn Navbar mặc định ở các trang quản trị (Admin & Recruiter)
-  const isHiddenNavbar = location.pathname.startsWith('/dashboard-admin') || location.pathname.startsWith('/dashboard');
+  // Kiểm tra để ẩn Navbar và Footer ở các trang quản trị (Admin & Recruiter)
+  const isHiddenLayout = location.pathname.startsWith('/dashboard-admin') || location.pathname.startsWith('/dashboard');
 
   return (
-    <div className='min-h-screen bg-white relative'>
+    <div className='min-h-screen bg-white relative flex flex-col'>
       <ToastContainer position="top-right" autoClose={3000} />
       
       {showLogin && <JobLogin setShowLogin={setShowLogin} />}
       
-      {/* Chỉ hiển thị Navbar nếu không phải trang Dashboard */}
-      {!isHiddenNavbar && <Navbar setShowLogin={setShowLogin} />}
+      {/* Chỉ hiển thị Navbar nếu không phải trang Dashboard[cite: 22] */}
+      {!isHiddenLayout && <Navbar setShowLogin={setShowLogin} />}
       
-      <div className={!isHiddenNavbar ? 'container px-4 2xl:px-20 mx-auto' : ''}>
+      <div className={`flex-1 ${!isHiddenLayout ? 'container px-4 2xl:px-20 mx-auto' : ''}`}>
         <div className='flex flex-col min-h-screen'>
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/apply-job/:id' element={<ApplyJob />} />
             
-            {/* Tuyến đường bảo vệ cho Người tìm việc */}
+            {/* Tuyến đường bảo vệ cho Người tìm việc[cite: 22] */}
             <Route path='/applications' element={
               <ProtectedRoute allowedRoles={['user']}>
                 <Applications />
@@ -63,24 +64,21 @@ const App = () => {
               </ProtectedRoute>
             } />
 
-            {/* --- ROUTE CHO TRANG XEM HỒ SƠ --- */}
             <Route path='/profile' element={
               <ProtectedRoute allowedRoles={['user']}>
                 <ViewProfile />
               </ProtectedRoute>
             } />
 
-            {/* --- ROUTE CHO TRANG SỬA HỒ SƠ --- */}
             <Route path='/edit-profile' element={
               <ProtectedRoute allowedRoles={['user']}>
                 <Profile />
               </ProtectedRoute>
             } />
 
-            {/* Tuyến đường dành cho Nhà tuyển dụng đăng nhập */}
             <Route path='/recruiter-login' element={<RecruiterLogin />} />
 
-            {/* --- TRANG QUẢN TRỊ NHÀ TUYỂN DỤNG (RECRUITER DASHBOARD) --- */}
+            {/* --- TRANG QUẢN TRỊ NHÀ TUYỂN DỤNG ---[cite: 22] */}
             <Route 
               path='/dashboard' 
               element={
@@ -89,7 +87,6 @@ const App = () => {
                 </ProtectedRoute>
               } 
             >
-              {/* Nested Routes: Các trang con sẽ được render vào thẻ <Outlet /> của Dashboard */}
               <Route index element={<DashboardHome />} />
               <Route path='view-applications' element={<ViewApplication />} />
               <Route path='add-job' element={<AddJob />} /> 
@@ -97,7 +94,7 @@ const App = () => {
               <Route path='company-profile' element={<CompanyProfile />} />
             </Route>
 
-            {/* --- TRANG QUẢN TRỊ (ADMIN) --- */}
+            {/* --- TRANG QUẢN TRỊ (ADMIN) ---[cite: 22] */}
             <Route 
               path='/dashboard-admin' 
               element={
@@ -107,17 +104,18 @@ const App = () => {
               } 
             >
               <Route index element={<AdminDashBoard />} />
-              {/* ĐÃ THAY THẾ CÁC THẺ DIV BẰNG COMPONENT THỰC TẾ */}
               <Route path='list-account' element={<AdminListAccount />} />
               <Route path='list-industry' element={<AdminListIndustry />} />
               <Route path='list-apply' element={<AdminListApply />} />
             </Route>
 
-            {/* Xử lý trang không tồn tại */}
             <Route path='*' element={<div className='py-20 text-center text-gray-400'>404 - Trang không tồn tại</div>} />
           </Routes>
         </div>
       </div>
+
+      {/* Hiển thị Footer ở cuối trang nếu không phải Dashboard[cite: 22] */}
+      {!isHiddenLayout && <Footer />}
     </div>
   )
 }
