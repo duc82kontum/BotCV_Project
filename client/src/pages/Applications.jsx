@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; 
 import { AppContext } from '../context/AppContext';
 import BackButton from '../components/BackButton'; 
+import { Briefcase, Building2, Trash2 } from 'lucide-react';
 
 const Applications = () => {
   const navigate = useNavigate(); 
@@ -13,6 +14,7 @@ const Applications = () => {
   
   const { backendUrl, token, fetchApplyCount } = useContext(AppContext);
 
+  // Hàm lấy danh sách việc làm đã ứng tuyển
   const fetchUserApplications = async () => {
     try {
       setLoading(true);
@@ -30,6 +32,7 @@ const Applications = () => {
     }
   };
 
+  // Hàm hủy ứng tuyển
   const handleCancelApply = async (appId) => {
     if (window.confirm("Bạn có chắc chắn muốn hủy ứng tuyển công việc này không?")) {
       try {
@@ -38,7 +41,7 @@ const Applications = () => {
         });
 
         if (data.success) {
-          toast.success(data.message);
+          toast.success(data.message || "Đã hủy ứng tuyển thành công");
           await fetchUserApplications();
           fetchApplyCount(); 
         }
@@ -52,94 +55,127 @@ const Applications = () => {
     if (token) fetchUserApplications();
   }, [token]);
 
+  // Hàm xử lý màu sắc Badge dựa trên trạng thái (Status)
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "Đã xem":
+        return "bg-blue-50 text-blue-600 border-blue-100";
+      case "Chờ phỏng vấn":
+        return "bg-green-50 text-green-600 border-green-100";
+      case "Từ chối":
+        return "bg-red-50 text-red-600 border-red-100";
+      default:
+        return "bg-amber-50 text-amber-600 border-amber-100";
+    }
+  };
+
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3">
+    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
       <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-gray-500 font-medium">Đang tải hồ sơ của bạn...</p>
+      <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Đang tải hồ sơ của bạn...</p>
     </div>
   );
 
   return (
-    <div className="container mx-auto p-4 py-10 min-h-[65vh]">
-      <BackButton className="mb-4" />
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
-        <span className="bg-blue-600 w-2 h-8 rounded-full"></span>
-        Việc làm đã ứng tuyển
-      </h2>
+    <div className="max-w-6xl mx-auto p-4 py-10 min-h-[70vh]">
+      <BackButton className="mb-6" />
+      
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-3xl font-black text-gray-800 tracking-tighter uppercase flex items-center gap-3">
+            <Briefcase size={32} className="text-blue-600" />
+            Việc làm đã ứng tuyển
+          </h2>
+          <p className="text-gray-500 font-medium mt-1">Theo dõi trạng thái các hồ sơ bạn đã gửi đi</p>
+        </div>
+        <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
+           <span className="text-blue-600 font-black text-sm uppercase">Tổng cộng: {applications.length} hồ sơ</span>
+        </div>
+      </div>
 
-      <div className="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-100">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-100">
-              <th className="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Công ty</th>
-              <th className="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Vị trí</th>
-              <th className="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">Trạng thái</th>
-              <th className="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.length > 0 ? (
-              applications.map((app, index) => (
-                <tr 
-                  key={index} 
-                  className="border-b border-gray-50 hover:bg-blue-50/30 transition-all cursor-pointer group"
-                  onClick={() => navigate(`/apply-job/${app.jobId?._id}`)}
-                >
-                  <td className="p-4 flex items-center gap-3">
-                    <img 
-                      src={app.companyId?.image 
-                        ? `${backendUrl}/uploads/${app.companyId.image}` 
-                        : '/default_company.png'
-                      } 
-                      className="w-12 h-12 rounded-xl border border-gray-100 object-contain bg-white p-1 shadow-sm"
-                      onError={(e) => { e.target.src = '/default_company.png'; }}
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-800 leading-none mb-1">{app.companyId?.companyName}</span>
-                      <span className="text-[10px] text-gray-400 font-medium italic">
-                        Nộp ngày: {dayjs(app.createdAt).format('DD/MM/YYYY')}
+      <div className="bg-white shadow-sm rounded-3xl overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Công ty</th>
+                <th className="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Vị trí & Địa điểm</th>
+                <th className="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Trạng thái hồ sơ</th>
+                <th className="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applications.length > 0 ? (
+                applications.map((app, index) => (
+                  <tr 
+                    key={index} 
+                    className="border-b border-gray-50 hover:bg-blue-50/10 transition-all cursor-pointer group"
+                    onClick={() => navigate(`/apply-job/${app.jobId?._id}`)}
+                  >
+                    <td className="p-5">
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={app.companyId?.image 
+                            ? `${backendUrl}${app.companyId.image}` 
+                            : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+                          } 
+                          className="w-12 h-12 rounded-2xl border border-gray-100 object-cover bg-white p-1 shadow-sm"
+                          alt="Company Logo"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-black text-gray-800 text-sm uppercase leading-tight mb-1 group-hover:text-blue-600 transition-colors">
+                            {app.companyId?.companyName || "N/A"}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                            Nộp ngày: {dayjs(app.createdAt).format('DD/MM/YYYY')}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5">
+                      <p className="text-gray-700 font-black text-sm uppercase mb-1">{app.jobId?.title || "Công việc đã xóa"}</p>
+                      <p className="text-[11px] text-gray-400 font-medium">{app.jobId?.district}, {app.jobId?.provinceCode}</p>
+                    </td>
+                    <td className="p-5 text-center">
+                      <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm border ${getStatusStyle(app.status)}`}>
+                        {app.status || "Đang chờ duyệt"}
                       </span>
+                    </td>
+                    <td className="p-5 text-center">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleCancelApply(app._id);
+                        }}
+                        className="text-gray-300 hover:text-red-600 hover:bg-red-50 w-10 h-10 rounded-xl transition-all flex items-center justify-center mx-auto border border-transparent hover:border-red-100"
+                        title="Hủy ứng tuyển"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="p-32 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                         <Building2 size={32} />
+                      </div>
+                      <p className="text-gray-400 font-bold uppercase text-xs tracking-widest">Bạn chưa ứng tuyển công việc nào.</p>
+                      <button 
+                        onClick={() => navigate('/')}
+                        className="mt-2 text-blue-600 font-black text-[11px] uppercase border-b-2 border-blue-100 hover:border-blue-600 transition-all pb-1"
+                      >
+                        Khám phá việc làm ngay
+                      </button>
                     </div>
                   </td>
-                  <td className="p-4">
-                    <p className="text-gray-700 font-bold group-hover:text-blue-600 transition-colors">{app.jobId?.title}</p>
-                    <p className="text-xs text-gray-400">{app.jobId?.district}, {app.jobId?.provinceCode}</p>
-                  </td>
-                  <td className="p-4 text-center">
-                    {/* CẬP NHẬT: Sử dụng trực tiếp statusWaiting từ database */}
-                    <span className={`px-4 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-tight shadow-sm border ${
-                      app.isDenied // Giả sử bạn có logic check denied/success riêng
-                        ? 'bg-red-50 text-red-600 border-red-100' : 
-                      app.isSuccess
-                        ? 'bg-green-50 text-green-600 border-green-100' : 
-                      'bg-amber-50 text-amber-600 border-amber-100' // Luôn hiện màu cam cho statusWaiting
-                    }`}>
-                      {app.statusWaiting || "Đang chờ duyệt"}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation(); 
-                        handleCancelApply(app._id);
-                      }}
-                      className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-9 h-9 rounded-xl transition-all flex items-center justify-center mx-auto"
-                      title="Hủy ứng tuyển"
-                    >
-                      ✕
-                    </button>
-                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="p-20 text-center text-gray-400">
-                  Bạn chưa ứng tuyển công việc nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
